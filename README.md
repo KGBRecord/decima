@@ -78,6 +78,19 @@ sequenceDiagram
 
 The extension drives Discord's own composer (paste + Enter). It does **not** call private Discord APIs and does **not** read or store your token.
 
+## Landing page
+
+The project site lives in `site/` (plain HTML, CSS and a little JS, no build step). Open `site/index.html` in a browser, or serve the folder with any static server.
+
+```bash
+pnpm build                                               # the screenshots are captured from the built extension
+CHROME_BIN="/path/to/chromium" node tools/site/capture-screens.mjs
+python3 tools/site/optimize-shots.py                     # PNG to WebP (needs Pillow)
+CHROME_BIN="/path/to/chromium" node tools/site/check-layout.mjs   # overflow and broken-image check at 4 widths
+```
+
+The screenshots are the real extension UI. The Instagram and Facebook illustrations in `tools/site/mock-pages.html` use the extension's own stylesheet and placeholder photos.
+
 ## Tech stack
 
 [WXT](https://wxt.dev) · React 19 · TypeScript · Tailwind CSS v4 · lucide-react · pnpm
@@ -147,6 +160,8 @@ components/          React UI components
 lib/                 types, storage, upload orchestration, hooks
 lib/ephemera/        Ephemera (pipeline, Instagram, Facebook modules)
 public/icon/         extension icons (generated)
+site/                landing page (static)
+tools/site/          landing page tooling (screenshots, layout check)
 assets/ephemera/     Ephemera button icons (generated)
 tools/icons/         Python generators for both icon sets
 wxt.config.ts        WXT and manifest configuration
