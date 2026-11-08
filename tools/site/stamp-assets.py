@@ -34,7 +34,7 @@ def stamp_html() -> int:
     p = SITE / "index.html"
     html = p.read_text()
     html = re.sub(
-        r'\b(src|href)="((?:assets/[^"?]+)|styles\.css|main\.js)(?:\?v=[0-9a-f]+)?"',
+        r'\b(src|href)="((?:assets/[^"?]+)|styles\.css|main\.js|favicon\.ico)(?:\?v=[0-9a-f]+)?"',
         lambda m: f'{m.group(1)}="{m.group(2)}?v={digest(m.group(2))}"',
         html,
     )

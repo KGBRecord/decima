@@ -10,7 +10,11 @@ Pure standard library: no Pillow, no network. Usage:
 
     python3 tools/icons/extension_icons.py            # writes public/icon/{16,32,48,96,128}.png
     python3 tools/icons/extension_icons.py --out DIR  # write somewhere else
-    python3 tools/icons/extension_icons.py --site     # also refresh site/assets favicon + brand icon
+    python3 tools/icons/extension_icons.py --site     # also write the site favicon set (see below)
+
+--site writes into site/: favicon.ico (16, 32, 48 in one file; also served at /favicon.ico, the
+URL browsers ask for by default), assets/favicon-16.png, assets/favicon-32.png,
+assets/favicon.png (48), assets/apple-touch-icon.png (180) and assets/icon-128.png.
 """
 import argparse
 import math
@@ -101,6 +105,17 @@ def render_png(size: int) -> bytes:
     )
 
 
+def build_ico(images: list) -> bytes:
+    """ICO container holding PNG-compressed images (supported by every current browser)."""
+    head = struct.pack("<HHH", 0, 1, len(images))
+    offset = 6 + 16 * len(images)
+    entries, blobs = b"", b""
+    for size, png in images:
+        entries += struct.pack("<BBBBHHII", size % 256, size % 256, 0, 0, 1, 32, len(png), offset + len(blobs))
+        blobs += png
+    return head + entries + blobs
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--out", type=Path, default=ROOT / "public" / "icon")
@@ -114,10 +129,15 @@ def main() -> None:
         path.write_bytes(rendered[size])
         print("wrote", path.relative_to(ROOT) if path.is_relative_to(ROOT) else path)
     if args.site:
-        site = ROOT / "site" / "assets"
-        (site / "favicon.png").write_bytes(rendered[48])
-        (site / "icon-128.png").write_bytes(rendered[128])
-        print("wrote site/assets/favicon.png, site/assets/icon-128.png")
+        site = ROOT / "site"
+        assets = site / "assets"
+        (assets / "favicon-16.png").write_bytes(rendered[16])
+        (assets / "favicon-32.png").write_bytes(rendered[32])
+        (assets / "favicon.png").write_bytes(rendered[48])
+        (assets / "icon-128.png").write_bytes(rendered[128])
+        (assets / "apple-touch-icon.png").write_bytes(render_png(180))
+        (site / "favicon.ico").write_bytes(build_ico([(16, rendered[16]), (32, rendered[32]), (48, rendered[48])]))
+        print("wrote site/favicon.ico and site/assets/{favicon-16,favicon-32,favicon,apple-touch-icon,icon-128}.png")
 
 
 if __name__ == "__main__":
