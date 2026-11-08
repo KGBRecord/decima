@@ -2,7 +2,7 @@
   "name": "dissend",
   "description": "Send many files to Discord, 10 per message.",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "wxt",
