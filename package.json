@@ -1,6 +1,6 @@
 {
   "name": "dissend",
-  "description": "Send many files to Discord, 10 per message.",
+  "description": "Batch-upload files to Discord (10 per message) and save stories from Instagram, Facebook and WhatsApp Web.",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -11,10 +11,12 @@
     "compile": "tsc --noEmit",
     "postinstall": "wxt prepare",
     "icons:extension": "python3 tools/icons/extension_icons.py",
-    "icons": "pnpm icons:extension"
+    "icons:ephemera": "python3 tools/icons/ephemera_icons.py",
+    "icons": "pnpm icons:extension && pnpm icons:ephemera"
   },
   "dependencies": {
     "clsx": "^2.1.1",
+    "jszip": "^3.10.2",
     "lucide-react": "^1.70.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"

@@ -1,4 +1,8 @@
+import { setupEphemera } from '@/lib/ephemera/background';
+
 export default defineBackground(() => {
+  setupEphemera();
+
   chrome.sidePanel?.setPanelBehavior?.({ openPanelOnActionClick: false }).catch(() => {});
 
   chrome.runtime.onInstalled.addListener(() => {
