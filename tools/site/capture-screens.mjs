@@ -107,6 +107,13 @@ async function page(url, scenario, { width, height }) {
   if (scenario) await c.send('Page.addScriptToEvaluateOnNewDocument', { source: stub(scenario) });
   await c.send('Page.navigate', { url });
   await sleep(1400);
+  // a stale metrics override renders the page at 1x inside a 2x frame (content fills a quarter of the shot)
+  for (let i = 0; i < 5; i++) {
+    const dpr = await c.ev('window.devicePixelRatio');
+    if (dpr === 2) break;
+    await c.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 2, mobile: false });
+    await sleep(400);
+  }
   return c;
 }
 const shot = async (c, name, clip) => {
