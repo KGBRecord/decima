@@ -2,6 +2,7 @@ import { Download, Camera, Users, MessageCircle, AlertTriangle } from 'lucide-re
 import { runEphemera, type StoryPlatform } from '@/lib/ephemera-tabs';
 import { useEphemeraTab } from '@/lib/hooks';
 import { Button, Card } from './ui';
+import { EphemeraLogo } from './EphemeraLogo';
 
 const META: Record<StoryPlatform, { label: string; Icon: typeof Camera; hint: string }> = {
   instagram: { label: 'Instagram', Icon: Camera, hint: 'Open a story or a profile, then download. Story/post buttons also appear on the page.' },
@@ -24,6 +25,13 @@ export function EphemeraPanel() {
   const { label, Icon, hint } = META[tab.platform];
   return (
     <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <EphemeraLogo size={36} />
+        <div>
+          <div className="font-bold leading-tight text-white">Ephemera</div>
+          <div className="text-[11px] leading-tight text-zinc-400">Save stories and media from the page you are on</div>
+        </div>
+      </div>
       <Card className="space-y-1.5">
         <div className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Active page</div>
         <div className="flex items-center gap-2 text-white"><Icon className="h-4 w-4 text-zinc-400" /><span className="font-semibold">{label}</span></div>

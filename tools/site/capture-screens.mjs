@@ -158,8 +158,10 @@ try {
   const src = fs.readFileSync(path.join(ROOT, 'lib/ephemera/instagram/profile-ui.ts'), 'utf8');
   const tpl = src.match(/`(\s*<style>[\s\S]*?<\/div>\s*)`/)?.[1];
   if (!tpl) throw new Error('profile dialog template not found');
+  // the template interpolates the Ephemera logo; feed it the real asset instead of dropping it
+  const logoUrl = 'data:image/svg+xml;base64,' + fs.readFileSync(path.join(ROOT, 'assets', 'ephemera', 'logo.svg')).toString('base64');
   const html = `<!doctype html><meta charset=utf-8><body style="margin:0;background:#1b1c1f;display:flex;justify-content:center;padding:28px">${tpl
-    .replace('${totalPosts}', '128').replace(/\$\{[^}]*\}/g, '')}`;
+    .replace('${totalPosts}', '128').replace('${LOGO_URL}', logoUrl).replace(/\$\{[^}]*\}/g, '')}`;
   const tmp = path.join(FILES_DIR, 'dialog.html'); fs.writeFileSync(tmp, html);
   c = await page(`file://${tmp}`, null, { width: 560, height: 1500 });
   const dim = await c.ev(`(() => { const m=document.querySelector('.eph-modal'); const r=m.getBoundingClientRect(); return {x:r.x,y:r.y,w:r.width,h:r.height}; })()`);

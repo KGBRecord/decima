@@ -1,6 +1,7 @@
 import type { DownloadProgress } from './types';
 import { fetchProfilePostsViaAPI, getProfileUsername, getUserPostCount } from './profile-api';
 import { state } from './state';
+import { LOGO_URL } from '@/lib/ephemera/icon-urls';
 
 /**
  * Check if the current page is a profile page and add download button
@@ -104,7 +105,7 @@ export function showFilterPopup(buttonElement: HTMLElement, username: string, to
 .eph-modal,.eph-modal *{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
 .eph-modal{width:460px;max-width:100%;max-height:90vh;overflow-y:auto;background:#fff;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.3);color:#1f2937;}
 .eph-head{display:flex;align-items:center;gap:12px;padding:18px 20px;border-bottom:1px solid #eef0f3;}
-.eph-head-icon{width:44px;height:44px;border-radius:12px;background:#e8f0fe;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+.eph-head-icon{width:44px;height:44px;display:flex;flex:0 0 auto;}.eph-head-icon img{display:block;width:44px;height:44px;}
 .eph-head-text{flex:1;}
 .eph-title{font-size:19px;font-weight:700;color:#111827;line-height:1.2;}
 .eph-sub{font-size:13px;color:#6b7280;margin-top:2px;}
@@ -153,9 +154,7 @@ export function showFilterPopup(buttonElement: HTMLElement, username: string, to
 </style>
 <div class="eph-modal">
   <div class="eph-head">
-    <div class="eph-head-icon">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H9l2 2.5h8.5A1.5 1.5 0 0 1 21 10v8.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/><path d="M12 11.5v5"/><path d="m9.8 14.6 2.2 2.2 2.2-2.2"/></svg>
-    </div>
+    <div class="eph-head-icon"><img src="${LOGO_URL}" width="44" height="44" alt=""></div>
     <div class="eph-head-text">
       <div class="eph-title">Ephemera</div>
       <div class="eph-sub">Download all posts</div>

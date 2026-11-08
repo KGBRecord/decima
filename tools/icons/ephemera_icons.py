@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-"""Generate the Ephemera button icons (assets/ephemera/*.svg).
+"""Generate the Ephemera logo and button icons (assets/ephemera/*.svg).
 
-The three SVGs are inlined into the content scripts at build time (see
-lib/ephemera/icon-urls.ts), so the page never needs extra network requests.
+Logo: a solid disc dissolving into dots that shrink and fade, "what vanishes, kept". Lime on
+the same near-black badge as Decima, so the two read as siblings with different marks.
+
+Each icon is an ink glyph on a lime rounded chip, so it reads on the white page buttons and on
+the dark story overlays alike. The three SVGs are inlined into the content scripts at build time
+(see lib/ephemera/icon-urls.ts), so the page never needs extra network requests.
 
     python3 tools/icons/ephemera_icons.py             # writes assets/ephemera/
     python3 tools/icons/ephemera_icons.py --preview   # also writes .wxt/icon-preview.html
@@ -11,49 +15,78 @@ import argparse
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-ACCENT = "#5865f2"  # Decima blurple
+LIME = "#c8ff3d"
+INK = "#0c0c0e"
 
 
-def stroke_svg(body: str, color: str = ACCENT, width: str = "2.2") -> str:
+def chip_svg(body: str) -> str:
     return (
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" '
-        f'stroke="{color}" stroke-width="{width}" stroke-linecap="round" stroke-linejoin="round">'
-        f"{body}</svg>\n"
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
+        f'<rect x="0.5" y="0.5" width="23" height="23" rx="7.5" fill="{LIME}"/>'
+        f'<g fill="none" stroke="{INK}" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">{body}</g>'
+        "</svg>\n"
+    )
+
+
+def logo_svg() -> str:
+    """Badge + disc + three fading dots. Pure geometry, no text."""
+    dots = (
+        '<circle cx="0.30" cy="0" r="0.15" opacity=".80"/>'
+        '<circle cx="0.56" cy="0" r="0.10" opacity=".52"/>'
+        '<circle cx="0.76" cy="0" r="0.06" opacity=".30"/>'
+    )
+    return (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 2 2">'
+        '<rect x="-0.94" y="-0.94" width="1.88" height="1.88" rx="0.44" fill="#0c0c0e" stroke="#3a3a42" stroke-width="0.06"/>'
+        f'<g fill="{LIME}"><circle cx="-0.34" cy="0" r="0.42"/>{dots}</g></svg>\n'
     )
 
 
 ICONS = {
-    # single download: continuous shaft, chevron head, tray line
-    "download": stroke_svg(
-        '<path d="M12 3.5v11"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M5 20h14"/>'
+    "logo": logo_svg(),
+    # single download: shaft fading in from a dotted start, chevron head, base line
+    "download": chip_svg(
+        '<path d="M12 6.5v8"/><path d="m8 11 4 4 4-4"/><path d="M7 18.5h10"/>'
+        f'<circle cx="12" cy="4" r="0.4" fill="{INK}"/>'
     ),
-    # bulk download: stacked chevrons over a tray line
-    "download-all": stroke_svg(
-        '<path d="m7.5 5 4.5 4.5L16.5 5"/><path d="m7.5 11 4.5 4.5 4.5-4.5"/><path d="M5 20h14"/>'
+    # bulk download: two stacked chevrons over a base line
+    "download-all": chip_svg(
+        '<path d="m8 5.5 4 4 4-4"/><path d="m8 10.5 4 4 4-4"/><path d="M7 18.5h10"/>'
     ),
-    # spinner: faint track plus a rotating arc (SMIL animation, no JS needed)
+    # spinner: faint ring plus an ink arc that turns (SMIL animation, no JS needed)
     "loader": (
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" '
-        f'stroke="{ACCENT}" stroke-width="2.6" stroke-linecap="round">'
-        '<circle cx="12" cy="12" r="8" opacity=".18"/>'
-        '<path d="M12 4a8 8 0 0 1 8 8"><animateTransform attributeName="transform" type="rotate" '
-        'from="0 12 12" to="360 12 12" dur=".8s" repeatCount="indefinite"/></path></svg>\n'
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
+        f'<rect x="0.5" y="0.5" width="23" height="23" rx="7.5" fill="{LIME}"/>'
+        f'<g fill="none" stroke="{INK}" stroke-width="2.4" stroke-linecap="round">'
+        '<circle cx="12" cy="12" r="6" opacity=".22"/>'
+        '<path d="M12 6a6 6 0 0 1 6 6"><animateTransform attributeName="transform" type="rotate" '
+        'from="0 12 12" to="360 12 12" dur=".8s" repeatCount="indefinite"/></path></g></svg>\n'
     ),
 }
 
 
 def write_preview(path: Path) -> None:
+    def cell(name: str, svg: str, bg: str, fg: str) -> str:
+        big = svg.replace("<svg ", "<svg width=72 height=72 ", 1)
+        small = svg.replace("<svg ", "<svg width=22 height=22 ", 1)
+        return (
+            f'<figure><div class="tile" style="background:{bg}">{big}'
+            f'<span class="pill">{small}</span></div><figcaption style="color:{fg}">{name}</figcaption></figure>'
+        )
+
     cells = "".join(
-        f'<figure><div class="tile">{svg.replace("<svg ", "<svg width=72 height=72 ", 1)}</div>'
-        f"<figcaption>{name}</figcaption></figure>"
+        cell(name, svg, bg, fg)
+        for bg, fg in (("#ffffff", "#333"), ("#1b1b1f", "#bbb"))
         for name, svg in ICONS.items()
     )
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         "<!doctype html><meta charset=utf-8><title>Ephemera icons</title>"
-        "<style>body{font:13px system-ui;background:#f3f4f6;display:flex;gap:16px;padding:24px}"
-        "figure{margin:0;text-align:center}.tile{background:#fff;border-radius:999px;padding:16px;"
-        "box-shadow:0 1px 4px #0003}</style>" + cells
+        "<style>body{font:13px system-ui;background:#888;display:grid;grid-template-columns:repeat(3,auto);"
+        "gap:16px;padding:24px;width:max-content}figure{margin:0;text-align:center}"
+        ".tile{border-radius:18px;padding:18px;display:flex;gap:14px;align-items:center;justify-content:center}"
+        ".pill{background:#fff;border-radius:30px;padding:7px;display:inline-flex;opacity:.9}"
+        "</style>" + cells
     )
 
 

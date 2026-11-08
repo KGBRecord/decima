@@ -1,4 +1,5 @@
-import { Download, ExternalLink, PanelRight, Settings as Cog, Upload } from 'lucide-react';
+import { Download, ExternalLink, PanelRight, Settings as Cog } from 'lucide-react';
+import { Logo } from './Logo';
 import { useDiscord, useRun, useSettings, useEphemeraTab } from '@/lib/hooks';
 import { runEphemera } from '@/lib/ephemera-tabs';
 import { ContextCard } from './ContextCard';
@@ -18,7 +19,7 @@ export function PopupApp() {
   return (
     <div className="w-[340px] space-y-3 p-3">
       <header className="flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blurple text-white"><Upload className="h-4 w-4" /></div>
+        <Logo size={32} />
         <div className="flex-1"><div className="font-bold text-white">Decima</div><div className="text-[11px] text-zinc-400">Many files → Discord, 10 per message</div></div>
         <button title="Options" onClick={() => chrome.runtime.openOptionsPage()} className="text-zinc-400 hover:text-white"><Cog className="h-4 w-4" /></button>
       </header>
