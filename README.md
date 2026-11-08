@@ -22,7 +22,8 @@ Pick 200 files once; the extension posts them as 20 consecutive messages while y
 
 Decima also includes a story/media downloader for **Instagram**, **Facebook** and **WhatsApp Web** — a native part of the extension, not a separate add-on.
 
-- Download buttons are injected on Instagram and Facebook pages (stories, posts, reels, videos, albums, profile bulk download as ZIP).
+- Download buttons are injected on Instagram and Facebook pages (stories, posts, reels, videos, albums).
+- **Whole Instagram profiles** download as one ZIP from the side panel: open a profile, open the Ephemera tab, pick a range, the most liked or most commented posts, and likes, comments or date filters.
 - From the toolbar popup or the side panel's **Ephemera** tab, download the story/status on the current tab.
 - Files are saved with Chrome's downloads API. Everything runs locally, with no telemetry.
 
@@ -30,7 +31,7 @@ Decima also includes a story/media downloader for **Instagram**, **Facebook** an
 
 1. **Detect** — content scripts on Instagram and Facebook observe the page and inject download buttons on stories, posts, reels, videos and albums. WhatsApp Web statuses are handled on demand.
 2. **Find the media** — on Instagram, the script calls the web API with the user's own session (CSRF / `fb_dtsg` token) to resolve original story and post files; story videos are read from the player's React fiber in the page's main world. On Facebook, video URLs are harvested from the DOM, `performance` entries and GraphQL responses.
-3. **Trigger** — page buttons, the toolbar popup or the side panel's Ephemera tab send a message to the service worker, which injects the matching on-demand script into the active tab with `chrome.scripting`.
+3. **Trigger** — page buttons, the toolbar popup or the side panel's Ephemera tab send a message to the service worker (profile downloads talk to the page directly: the panel asks it for the post count, then starts the run and shows its progress), which injects the matching on-demand script into the active tab with `chrome.scripting`.
 4. **Download** — the service worker saves files through `chrome.downloads`, names them by username and post, and falls back to fetch → blob → data URL when a direct link is refused. Profile bulk downloads are packed into a ZIP with JSZip.
 
 ```mermaid

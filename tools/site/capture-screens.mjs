@@ -50,12 +50,14 @@ const stub = (scenario) => `(() => {
   const SC = ${JSON.stringify(scenario)};
   const tab = SC === 'ig'
     ? { id: 7, url: 'https://www.instagram.com/stories/slowroutes/', title: 'Stories \u2022 Instagram' }
+    : SC === 'igprofile'
+    ? { id: 7, url: 'https://www.instagram.com/slowroutes/', title: 'Slow Routes (@slowroutes) \\u2022 Instagram' }
     : { id: 7, url: 'https://discord.com/channels/1180000000000000001/1180000000000000002', title: '#release-assets | Night Shift Collective | Discord' };
   const ctx = { guildId: '1180000000000000001', channelId: '1180000000000000002', guildName: 'Night Shift Collective',
     channelName: 'release-assets', isDM: false, canSend: true };
   const put = (o, k, v) => { try { o[k] = v; } catch (e) {} if (o[k] !== v) { try { Object.defineProperty(o, k, { value: v, configurable: true }); } catch (e) {} } };
   put(chrome.tabs, 'query', async () => [tab]);
-  put(chrome.tabs, 'sendMessage', async (_id, m) => (m && m.type === 'GET_CONTEXT' ? ctx : undefined));
+  put(chrome.tabs, 'sendMessage', async (_id, m) => (m && m.type === 'GET_CONTEXT' ? ctx : m && m.type === 'EPH_PROFILE_INFO' ? { ok: true, username: 'slowroutes', totalPosts: 128 } : undefined));
   put(chrome.tabs, 'connect', () => {
     const ls = []; let bid = '';
     return {
@@ -161,20 +163,6 @@ try {
   await shot(c, 'popup.png');
   c.close();
 
-  // 6) profile bulk-download dialog (real template + stylesheet from the source)
-  const src = fs.readFileSync(path.join(ROOT, 'lib/ephemera/instagram/profile-ui.ts'), 'utf8');
-  const tpl = src.match(/`(\s*<style>[\s\S]*?<\/div>\s*)`/)?.[1];
-  if (!tpl) throw new Error('profile dialog template not found');
-  // the template interpolates the Ephemera logo; feed it the real asset instead of dropping it
-  const logoUrl = 'data:image/svg+xml;base64,' + fs.readFileSync(path.join(ROOT, 'assets', 'ephemera', 'logo.svg')).toString('base64');
-  const html = `<!doctype html><meta charset=utf-8><body style="margin:0;background:#1b1c1f;display:flex;justify-content:center;padding:28px">${tpl
-    .replace('${totalPosts}', '128').replace('${LOGO_URL}', logoUrl).replace(/\$\{[^}]*\}/g, '')}`;
-  const tmp = path.join(FILES_DIR, 'dialog.html'); fs.writeFileSync(tmp, html);
-  c = await page(`file://${tmp}`, null, { width: 560, height: 1500 });
-  const dim = await c.ev(`(() => { const m=document.querySelector('.eph-modal'); const r=m.getBoundingClientRect(); return {x:r.x,y:r.y,w:r.width,h:r.height}; })()`);
-  await shot(c, 'dialog-profile.png', { x: dim.x - 28, y: dim.y - 28, width: dim.w + 56, height: dim.h + 56 });
-  c.close();
-
   // 7) where the buttons appear on Instagram and Facebook: mock pages + the real built stylesheet
   const css = fs.readFileSync(path.join(DIST, 'content-scripts', 'instagram.css'), 'utf8');
   const photos = 'file://' + path.join(ROOT, 'tools', 'site', 'photos');
@@ -191,7 +179,7 @@ try {
   console.log('mock photos:', bgReady.join(' | '));
   if (bgReady.some((r) => r.startsWith('FAILED'))) throw new Error('mock photo failed to load');
   await sleep(500);
-  for (const [id, name] of [['ig-story', 'ig-story.png'], ['ig-post', 'ig-post.png'], ['fb-story', 'fb-story.png'], ['fb-feed', 'fb-feed.png'], ['ig-prof', 'ig-profile.png']]) {
+  for (const [id, name] of [['ig-story', 'ig-story.png'], ['ig-post', 'ig-post.png'], ['fb-story', 'fb-story.png'], ['fb-feed', 'fb-feed.png']]) {
     // show exactly one stage at the page origin, so the capture cannot include a neighbour
     const r = await c.ev(`(() => {
       document.querySelectorAll('.stage').forEach((e) => { e.style.display = e.id === ${JSON.stringify(id)} ? '' : 'none'; });
@@ -199,9 +187,27 @@ try {
       return { w: b.width, h: b.height, x: b.x, y: b.y };
     })()`);
     await sleep(300);
-    await shot(c, name, { x: r.x, y: r.y, width: r.w, height: r.h });
+    // a fractional clip origin (the stage sits at x=0.0005) makes Chromium render the page at half size
+    // inside the frame; whole-pixel origin and size capture it at full size
+    await shot(c, name, { x: Math.round(r.x), y: Math.round(r.y), width: Math.ceil(r.w), height: Math.ceil(r.h) });
   }
   c.close();
+  // last on purpose: this one resizes its page twice, and a stale override must not leak into the mock captures
+  // 8) "Download all posts" card in the Ephemera tab, on an Instagram profile (real React UI)
+  c = await page(panelUrl, 'igprofile', { width: 400, height: 1010 });
+  await clickText(c, 'Ephemera');
+  for (let i = 0; i < 20; i++) { await sleep(300); if (await c.ev(`/128\\s*posts/.test(document.body.innerText)`)) break; }
+  await c.ev(`(() => { const set = (el, v) => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, String(v)); el.dispatchEvent(new Event('input', { bubbles: true })); };
+    set(document.querySelector('input[aria-label="First post"]'), 1); set(document.querySelector('input[aria-label="Last post"]'), 40);
+    document.querySelectorAll('input[type=checkbox]')[0].click(); })()`);
+  await sleep(500);
+  // fit the frame to the content: bottom of the last block in <main>, plus the panel's own padding
+  const hgt = await c.ev(`(() => { const m = document.querySelector('main'); const last = [...m.querySelectorAll('.space-y-3 > *')].pop(); return Math.ceil(last.getBoundingClientRect().bottom + 16); })()`);
+  await c.send('Emulation.setDeviceMetricsOverride', { width: 400, height: Math.max(hgt, 600), deviceScaleFactor: 2, mobile: false });
+  await sleep(400);
+  await shot(c, 'panel-profile.png');
+  c.close();
+
 } finally {
   cleanup();
 }

@@ -166,14 +166,14 @@ input[type=range]:hover::-webkit-slider-thumb{transform:scale(1.18)}
 .cell-d p{margin-top:10px;font-size:.95rem;color:var(--ink-2)}
 .cell b small{font:500 .9rem/1 var(--mono);letter-spacing:0;margin-left:4px;opacity:.7}
 
-/* ephemera: three tall shots and the intro on top, two wide shots below */
+/* ephemera: three tall shots and the intro on top, one wide shot below */
 .eph{padding:clamp(70px,9vw,140px) 0;border-top:1px solid var(--line)}
 .eph-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:clamp(16px,2.2vw,32px);row-gap:clamp(36px,5vw,68px);align-items:start}
 .eph-intro{grid-column:1/4;position:sticky;top:110px}
 .eph-intro h2{font-size:clamp(1.9rem,3.4vw,3rem);max-width:12ch}
 .ec{margin:0}
 .ec-tall{grid-column:span 3}
-.ec-wide{grid-column:span 6}
+.ec-wide{grid-column:4/-1}
 .ec .frame{position:relative;overflow:hidden;border-radius:var(--r-img);border:1px solid var(--line-2);background:#000;aspect-ratio:var(--ar);transition:border-color .4s,transform .7s var(--ease)}
 .ec-tall .frame{aspect-ratio:3/5}
 .ec-wide .frame{aspect-ratio:7/6}
@@ -228,7 +228,7 @@ input[type=range]:hover::-webkit-slider-thumb{transform:scale(1.18)}
   .eph-intro{grid-column:1/-1;position:static}
   .eph-intro h2{max-width:16ch}
   .ec-tall{grid-column:span 4}
-  .ec-wide{grid-column:span 6}
+  .ec-wide{grid-column:1/-1}
   .hero-in{grid-template-columns:1fr;gap:34px}
   .hero-shot{justify-self:start;width:min(100%,380px)}
   .pick-in,.popup-in{grid-template-columns:1fr}
