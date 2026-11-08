@@ -4,11 +4,11 @@
    Z scale: grain 70, nav 80, progress 100.
    Motion lives in main.js and is skipped when the visitor asks for reduced motion. */
 
-@font-face{font-family:"Geist";font-weight:400;font-display:swap;src:url(assets/fonts/geist-sans-latin-400-normal.woff2) format("woff2")}
-@font-face{font-family:"Geist";font-weight:600;font-display:swap;src:url(assets/fonts/geist-sans-latin-600-normal.woff2) format("woff2")}
-@font-face{font-family:"Geist";font-weight:700;font-display:swap;src:url(assets/fonts/geist-sans-latin-700-normal.woff2) format("woff2")}
-@font-face{font-family:"Geist Mono";font-weight:500;font-display:swap;src:url(assets/fonts/geist-mono-latin-500-normal.woff2) format("woff2")}
-@font-face{font-family:"Bricolage";font-weight:200 800;font-display:swap;src:url(assets/fonts/bricolage-latin-wght-normal.woff2) format("woff2")}
+@font-face{font-family:"Geist";font-weight:400;font-display:swap;src:url(assets/fonts/geist-sans-latin-400-normal.woff2?v=04bff5c1) format("woff2")}
+@font-face{font-family:"Geist";font-weight:600;font-display:swap;src:url(assets/fonts/geist-sans-latin-600-normal.woff2?v=915e9f68) format("woff2")}
+@font-face{font-family:"Geist";font-weight:700;font-display:swap;src:url(assets/fonts/geist-sans-latin-700-normal.woff2?v=c70ca61c) format("woff2")}
+@font-face{font-family:"Geist Mono";font-weight:500;font-display:swap;src:url(assets/fonts/geist-mono-latin-500-normal.woff2?v=3d62abc6) format("woff2")}
+@font-face{font-family:"Bricolage";font-weight:200 800;font-display:swap;src:url(assets/fonts/bricolage-latin-wght-normal.woff2?v=9b03f9ff) format("woff2")}
 
 :root{
   --bg:#09090a; --bg-2:#101012; --bg-3:#17171a; --line:#27272c; --line-2:#34343b;
