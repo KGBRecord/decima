@@ -2,7 +2,7 @@
   "name": "decima",
   "description": "Batch-upload files to Discord (10 per message) and save stories from Instagram, Facebook and WhatsApp Web.",
   "private": true,
-  "version": "1.1.1",
+  "version": "1.2.0",
   "type": "module",
   "scripts": {
     "dev": "wxt",
