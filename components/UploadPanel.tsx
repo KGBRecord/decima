@@ -69,8 +69,8 @@ export function UploadPanel({ settings }: { settings: Settings }) {
         onDragOver={(e) => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)} onDrop={onDrop}
         onClick={() => !busy && inputRef.current?.click()}
         className={clsx('flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed px-3 py-6 text-center transition',
-          drag ? 'border-blurple bg-blurple/10' : 'border-ink-600 bg-ink-800 hover:border-blurple/60', busy && 'pointer-events-none opacity-50')}>
-        <FileUp className="h-6 w-6 text-blurple" />
+          drag ? 'border-acc bg-acc/10' : 'border-ink-600 bg-ink-800 hover:border-acc/60', busy && 'pointer-events-none opacity-50')}>
+        <FileUp className="h-6 w-6 text-acc" />
         <div className="font-semibold text-white">Drop files here or click to choose</div>
         <div className="text-[11px] text-zinc-400">Any number of files — sent {settings.perMessage} per message</div>
         <input ref={inputRef} type="file" multiple hidden onChange={(e) => { if (e.target.files) addFiles(e.target.files); e.target.value = ''; }} />

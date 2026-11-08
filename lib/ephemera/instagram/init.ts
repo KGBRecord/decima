@@ -1,9 +1,8 @@
 import { getIGDtsg } from './dtsg';
 import { state } from './state';
 import { registerListeners } from './listeners';
-import { injectStyles } from './styles';
 import { startObserver } from './observer';
-import { checkForProfilePage } from './profile-ui';
+import { registerProfileBridge } from './profile-bridge';
 import { addbutton, addExploreDownloadButtons, addSingleImageDownloadButtons, cleanupIgDownloadButtons } from './grid';
 import { addVideoDownloadButton } from './video';
 
@@ -15,7 +14,7 @@ export function initInstagram(): void {
   });
 
   registerListeners();
-  injectStyles();
+  registerProfileBridge();
   startObserver();
 
   // Initialize
@@ -48,10 +47,4 @@ export function initInstagram(): void {
     } catch (e) {}
   }, 2000);
 
-  // Add profile specific button when on profile pages
-  setTimeout(checkForProfilePage, 1000);
-  // Check periodically for profile page changes (Instagram uses client-side routing)
-  setInterval(function () {
-    if (!document.hidden) checkForProfilePage();
-  }, 3000);
 }

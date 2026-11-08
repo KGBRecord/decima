@@ -2,7 +2,7 @@ import type { ListenerRequest } from './types';
 import { restoreDownloadButton, ephFindMostVisibleIgDownloadButton } from './buttons';
 import { addVideoDownloadButton } from './video';
 import { addSingleImageDownloadButtons, addbutton } from './grid';
-import { checkForProfilePage, handleDownloadProgress } from './profile-ui';
+import { reportDone, reportError, reportFiles } from './profile-report';
 import { state } from './state';
 import { ICON_DOWNLOAD, ICON_DOWNLOAD_ALL } from '@/lib/ephemera/icon-urls';
 
@@ -38,9 +38,20 @@ window.addEventListener(
 // Message listener for communication with background script
 chrome.runtime.onMessage.addListener((request: ListenerRequest, _sender, sendResponse) => {
   if (request.downloadProgress) {
-    handleDownloadProgress(request.downloadProgress);
+    const p = request.downloadProgress as { current?: number; total?: number };
+    if (state.isProcessingProfile && typeof p.current === "number" && typeof p.total === "number") {
+      reportFiles(p.current, p.total);
+    }
     sendResponse({ status: "Progress update received" });
     return true;
+  }
+  if (request.downloadComplete) {
+    if (state.isProcessingProfile) reportDone();
+    return false;
+  }
+  if (typeof request.downloadError === "string") {
+    if (state.isProcessingProfile) reportError(request.downloadError || "The download failed.");
+    return false;
   }
   // Handle download confirmation
   if (request.countdow) {
@@ -63,35 +74,6 @@ chrome.runtime.onMessage.addListener((request: ListenerRequest, _sender, sendRes
 
   // Handle click action from popup or other parts of the extension
   if (request.clickaction) {
-    // Profile page download action
-    if (request.profileAction) {
-      const profileBtn = document.querySelector<HTMLElement>(
-        ".eph_toolkit_profile_download_btn",
-      );
-      if (profileBtn) {
-        profileBtn.click();
-        sendResponse({ status: "Profile download initiated" });
-        return true;
-      }
-
-      // If button not found yet, try to add it first
-      checkForProfilePage();
-      setTimeout(() => {
-        const profileBtn = document.querySelector<HTMLElement>(
-          ".eph_toolkit_profile_download_btn",
-        );
-        if (profileBtn) {
-          profileBtn.click();
-          sendResponse({
-            status: "Profile download initiated after button creation",
-          });
-        } else {
-          sendResponse({ status: "Profile button not found" });
-        }
-      }, 500);
-      return true;
-    }
-
     // Regular post or story download action
     if (!location.pathname.includes("stories")) {
       try {

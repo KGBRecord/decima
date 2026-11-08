@@ -11,8 +11,8 @@ export function Button({ variant = 'primary', className, ...p }: ButtonHTMLAttri
       {...p}
       className={clsx(
         'inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer',
-        variant === 'primary' && 'bg-blurple hover:bg-blurple-dark text-white',
-        variant === 'success' && 'bg-ok hover:brightness-110 text-white',
+        variant === 'primary' && 'bg-acc hover:bg-acc-dark text-on-acc',
+        variant === 'success' && 'bg-acc hover:bg-acc-dark text-on-acc',
         variant === 'danger' && 'bg-bad hover:brightness-110 text-white',
         variant === 'ghost' && 'bg-ink-600 hover:bg-ink-600/70 text-white',
         className,
@@ -31,7 +31,7 @@ export function Field({ label, hint, children }: { label: string; hint?: string;
   );
 }
 
-export const inputCls = 'w-full rounded-md bg-ink-900 border border-ink-600 px-2 py-1.5 text-white outline-none focus:border-blurple';
+export const inputCls = 'w-full rounded-md bg-ink-900 border border-ink-600 px-2 py-1.5 text-white outline-none focus:border-acc';
 
 export function Badge({ tone, children }: { tone: 'ok' | 'warn' | 'bad' | 'muted'; children: ReactNode }) {
   return (
@@ -46,7 +46,7 @@ export function Badge({ tone, children }: { tone: 'ok' | 'warn' | 'bad' | 'muted
 export function Progress({ value }: { value: number }) {
   return (
     <div className="h-2 w-full overflow-hidden rounded-full bg-ink-900">
-      <div className="h-full bg-ok transition-all duration-300" style={{ width: `${Math.round(value * 100)}%` }} />
+      <div className="h-full bg-acc transition-all duration-300" style={{ width: `${Math.round(value * 100)}%` }} />
     </div>
   );
 }

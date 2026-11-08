@@ -315,8 +315,6 @@ export function isIgButtonAttachedToMedia(btn: HTMLElement): boolean {
   try {
     if (!btn || !document.contains(btn)) return false;
     if (location.pathname.indexOf("/stories/") !== -1) return true;
-    if (btn.classList.contains("eph_toolkit_profile_download_btn"))
-      return true;
     if ((btn as DlButton).__ephVideoElement && document.contains((btn as DlButton).__ephVideoElement as Node))
       return true;
     if (

@@ -3,6 +3,8 @@ import { runEphemera, type StoryPlatform } from '@/lib/ephemera-tabs';
 import { useEphemeraTab } from '@/lib/hooks';
 import { Button, Card } from './ui';
 import { EphemeraLogo } from './EphemeraLogo';
+import { ProfileDownload } from './ProfileDownload';
+import { instagramProfileName } from '@/lib/ephemera/profile-protocol';
 
 const META: Record<StoryPlatform, { label: string; Icon: typeof Camera; hint: string }> = {
   instagram: { label: 'Instagram', Icon: Camera, hint: 'Open a story or a profile, then download. Story/post buttons also appear on the page.' },
@@ -23,6 +25,7 @@ export function EphemeraPanel() {
       </Card>
     );
   const { label, Icon, hint } = META[tab.platform];
+  const profile = tab.platform === 'instagram' ? instagramProfileName(tab.url) : null;
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-3">
@@ -35,10 +38,14 @@ export function EphemeraPanel() {
       <Card className="space-y-1.5">
         <div className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Active page</div>
         <div className="flex items-center gap-2 text-white"><Icon className="h-4 w-4 text-zinc-400" /><span className="font-semibold">{label}</span></div>
-        <div className="truncate text-zinc-400" title={tab.title}>{tab.title || tab.url}</div>
-        <div className="text-[11px] text-zinc-500">{hint}</div>
+        {!profile && <div className="truncate text-zinc-400" title={tab.title}>{tab.title || tab.url}</div>}
+        <div className="text-[11px] text-zinc-500">{profile ? 'Profile page detected. Choose what to take below.' : hint}</div>
       </Card>
-      <Button className="w-full" onClick={() => runEphemera(tab.tabId)}><Download className="h-4 w-4" />Download from this page</Button>
+      {profile ? (
+        <ProfileDownload key={`${tab.tabId}:${profile}`} tabId={tab.tabId} username={profile} />
+      ) : (
+        <Button className="w-full" onClick={() => runEphemera(tab.tabId)}><Download className="h-4 w-4" />Download from this page</Button>
+      )}
       <div className="text-[11px] text-zinc-500">Files are saved through Chrome's downloads. Everything runs locally, with no telemetry.</div>
     </div>
   );

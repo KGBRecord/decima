@@ -55,7 +55,8 @@ export interface ListenerRequest {
   downloadProgress?: DownloadProgress;
   countdow?: string;
   clickaction?: boolean;
-  profileAction?: boolean;
+  downloadComplete?: boolean;
+  downloadError?: string;
   [key: string]: unknown;
 }
 

@@ -11,7 +11,7 @@ export function OptionsApp() {
       <h1 className="text-xl font-bold text-white">Decima — Options</h1>
       <Card><SettingsForm settings={settings} update={update} /></Card>
       <Button variant="ghost" onClick={() => update(DEFAULT_SETTINGS)}><RotateCcw className="h-4 w-4" />Reset to defaults</Button>
-      <div className="pt-4 text-[12px] text-zinc-500">Decima v{chrome.runtime.getManifest().version} · by <a className="text-blurple hover:underline" href="https://github.com/KGBRecord" target="_blank" rel="noreferrer">KGB Record</a></div>
+      <div className="pt-4 text-[12px] text-zinc-500">Decima v{chrome.runtime.getManifest().version} · by <a className="text-acc hover:underline" href="https://github.com/KGBRecord" target="_blank" rel="noreferrer">KGB Record</a></div>
     </div>
   );
 }

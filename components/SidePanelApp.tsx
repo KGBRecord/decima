@@ -26,7 +26,7 @@ export function SidePanelApp() {
       <nav className="flex border-b border-ink-900 bg-ink-800">
         {tabs.map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={clsx('flex flex-1 items-center justify-center gap-1.5 border-b-2 py-2 text-[12px] font-medium', tab === t.id ? 'border-blurple text-white' : 'border-transparent text-zinc-400 hover:text-white')}>
+            className={clsx('flex flex-1 items-center justify-center gap-1.5 border-b-2 py-2 text-[12px] font-medium', tab === t.id ? 'border-acc text-white' : 'border-transparent text-zinc-400 hover:text-white')}>
             <t.icon className="h-3.5 w-3.5" />{t.label}
           </button>
         ))}
@@ -52,8 +52,8 @@ export function SidePanelApp() {
               <div className="font-semibold text-white">KGB Record</div>
               <div className="text-[11px] italic text-zinc-500">code is our music</div>
               <div className="flex flex-col gap-1 pt-1 text-[12px]">
-                <a className="text-blurple hover:underline" href="https://github.com/KGBRecord" target="_blank" rel="noreferrer">github.com/KGBRecord</a>
-                <a className="text-blurple hover:underline" href="https://github.com/KGBRecord/decima" target="_blank" rel="noreferrer">Source code &amp; issues</a>
+                <a className="text-acc hover:underline" href="https://github.com/KGBRecord" target="_blank" rel="noreferrer">github.com/KGBRecord</a>
+                <a className="text-acc hover:underline" href="https://github.com/KGBRecord/decima" target="_blank" rel="noreferrer">Source code &amp; issues</a>
               </div>
             </Card>
             <Card className="space-y-2 text-zinc-300">

@@ -1,228 +1,8 @@
 import type { LooseJson, ProfileFilters, ProfilePost } from './types';
 import { findVideoUrlDeep, getBestImageUrl } from './story-fetch';
-import { showProfileDownloadCaution, showProfileDownloadError, showProgressBar } from './profile-ui';
+import { fetchPostsPage } from './profile-graphql';
+import { reportError, reportProgress } from './profile-report';
 import { state } from './state';
-
-export function fetchProfilePostsWithEarlyStopping(
-  userId: LooseJson,
-  username: LooseJson,
-  csrfToken: LooseJson,
-  maxPostsNeeded: LooseJson,
-  buttonElement: HTMLElement | null = null,
-  after: string | null = null,
-  allPosts: LooseJson[] = [],
-) {
-  return new Promise<LooseJson[]>((resolve, reject) => {
-    // Updated progress if button element exists
-    if (buttonElement && allPosts.length > 0) {
-      // Calculate progress percentage (20-60%)
-      const baseProgress = 20;
-      const progressRange = 40;
-      const progressPercentage =
-        baseProgress +
-        Math.min(allPosts.length / maxPostsNeeded, 1) * progressRange;
-
-      showProgressBar(
-        buttonElement,
-        progressPercentage,
-        `Fetched ${allPosts.length}/${maxPostsNeeded} posts...`,
-      );
-    }
-
-    // If we already have enough posts, stop fetching
-    if (allPosts.length >= maxPostsNeeded) {
-      console.log(
-        `Early stopping: Already fetched ${allPosts.length} posts, needed ${maxPostsNeeded}`,
-      );
-      resolve(allPosts.slice(0, maxPostsNeeded));
-      return;
-    }
-
-    // API logic
-    let variablesObj;
-
-    if (after) {
-      // For pagination requests
-      variablesObj = {
-        data: {
-          count: 12,
-          include_reel_media_seen_timestamp: true,
-          include_relationship_info: true,
-          latest_besties_reel_media: true,
-          latest_reel_media: true,
-        },
-        username: username,
-        __relay_internal__pv__PolarisIsLoggedInrelayprovider: true,
-        __relay_internal__pv__PolarisShareSheetV3relayprovider: false,
-        first: 12,
-        last: null,
-        after: after,
-        before: null,
-      };
-    } else {
-      // For initial request
-      variablesObj = {
-        data: {
-          count: 12,
-          include_reel_media_seen_timestamp: true,
-          include_relationship_info: true,
-          latest_besties_reel_media: true,
-          latest_reel_media: true,
-        },
-        username: username,
-        __relay_internal__pv__PolarisIsLoggedInrelayprovider: true,
-        __relay_internal__pv__PolarisShareSheetV3relayprovider: false,
-      };
-    }
-
-    // Log the request for debugging
-    console.log(
-      `Fetching profile posts for ${username}${after ? ` with cursor: ${after}` : ""}`,
-    );
-
-    // Determine which endpoint to use based on whether we're paginating
-    const endpoint = "https://www.instagram.com/graphql/query";
-
-    // Prepare the request
-    const requestOptions: RequestInit = {
-      method: "POST",
-      headers: {
-        "x-instagram-ajax": "1016349901",
-        "x-asbd-id": "129477",
-        "x-ig-app-id": "936619743392459",
-        "x-requested-with": "XMLHttpRequest",
-        "x-csrftoken": csrfToken,
-        "content-type": "application/x-www-form-urlencoded",
-      },
-      credentials: "include",
-      body: new URLSearchParams({
-        fb_dtsg: state.tokendsg,
-        variables: JSON.stringify(variablesObj),
-        doc_id: 9750506811647048,
-        fb_api_caller_class: "RelayModern",
-        fb_api_req_friendly_name: "PolarisProfilePostsQuery",
-        server_timestamps: true,
-      } as unknown as Record<string, string>).toString(),
-    };
-
-    fetch(endpoint, requestOptions)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Network response was not ok: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then((json) => {
-        console.log("Response received:", json);
-
-        // Extract posts from the response
-        let posts: LooseJson[] = [];
-        let hasNextPage = false;
-        let endCursor: string | null = null;
-
-        try {
-          // Find the media data in different possible locations
-          let mediaData = null;
-
-          if (
-            json.data &&
-            json.data.user &&
-            json.data.user.edge_owner_to_timeline_media
-          ) {
-            // GraphQL query hash response format
-            mediaData = json.data.user.edge_owner_to_timeline_media;
-            hasNextPage = mediaData.page_info.has_next_page;
-            endCursor = mediaData.page_info.end_cursor;
-          } else if (
-            json.data &&
-            json.data.xdt_api__v1__feed__user_timeline_graphql_connection
-          ) {
-            // Standard API response format
-            mediaData =
-              json.data.xdt_api__v1__feed__user_timeline_graphql_connection;
-            hasNextPage = mediaData.page_info.has_next_page;
-            endCursor = mediaData.page_info.end_cursor;
-          }
-
-          if (mediaData && mediaData.edges) {
-            // Process each post
-            mediaData.edges.forEach((edge: LooseJson) => {
-              // Handle different node structures
-              const node = edge.node.media || edge.node;
-
-              // Process post to extract likes and comments
-              posts.push(node);
-            });
-          }
-
-          console.log(`Extracted ${posts.length} posts from response`);
-
-          // Combine with previous posts
-          const combinedPosts = [...allPosts, ...posts];
-          console.log(`Total posts collected: ${combinedPosts.length}`);
-
-          // Check if we have enough posts now
-          if (combinedPosts.length >= maxPostsNeeded) {
-            console.log(
-              `We have ${combinedPosts.length} posts, which is enough (needed ${maxPostsNeeded})`,
-            );
-            // Return only the number of posts we need
-            resolve(combinedPosts.slice(0, maxPostsNeeded));
-            return;
-          }
-
-          // If there are more pages and we need more posts, fetch the next page
-          if (hasNextPage && endCursor) {
-            console.log(
-              `Found more posts. Cursor: ${endCursor}. Fetching next page...`,
-            );
-
-            // Wait a bit to avoid rate limiting
-            setTimeout(() => {
-              fetchProfilePostsWithEarlyStopping(
-                userId,
-                username,
-                csrfToken,
-                maxPostsNeeded,
-                buttonElement,
-                endCursor,
-                combinedPosts,
-              )
-                .then(resolve)
-                .catch(reject);
-            }, 1000);
-          } else {
-            console.log(
-              `Finished fetching posts. Total: ${combinedPosts.length}`,
-            );
-            resolve(combinedPosts);
-          }
-        } catch (e) {
-          console.error("Error processing profile posts data:", e);
-
-          // If we have some posts, return them instead of failing
-          if (allPosts.length > 0) {
-            resolve(allPosts);
-          } else {
-            reject(e);
-          }
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching profile posts:", error);
-
-        // If we already have some posts, return those instead of failing
-        if (allPosts.length > 0) {
-          console.log(
-            `Returning ${allPosts.length} posts that were already fetched`,
-          );
-          resolve(allPosts);
-        } else {
-          reject(error);
-        }
-      });
-  });
-}
 
 export function processPostData(post: ProfilePost): ProfilePost {
   // Create a copy to avoid modifying the original
@@ -513,50 +293,6 @@ export function applyFilters(posts: ProfilePost[], filters: ProfileFilters): Pro
   return filteredPosts;
 }
 
-export function getUserPostCount(username: string): Promise<number> {
-  return new Promise((resolve, reject) => {
-    // Get CSRF token
-    const token = document.documentElement.outerHTML.match(
-      /csrf_token":".*?(?=")/g,
-    );
-    const csrfToken = token && token[0] ? token[0].split('"')[2] : "";
-
-    // Fetch user profile to get post count
-    fetch(
-      `https://i.instagram.com/api/v1/users/web_profile_info/?username=${username}`,
-      {
-        method: "GET",
-        headers: {
-          "x-instagram-ajax": "1016349901",
-          "x-asbd-id": "129477",
-          "x-ig-app-id": "936619743392459",
-          "x-requested-with": "XMLHttpRequest",
-          "x-csrftoken": csrfToken,
-        },
-        credentials: "include",
-      },
-    )
-      .then((response) => response.json())
-      .then((json) => {
-        if (
-          json.data &&
-          json.data.user &&
-          json.data.user.edge_owner_to_timeline_media &&
-          json.data.user.edge_owner_to_timeline_media.count !== undefined
-        ) {
-          const postCount = json.data.user.edge_owner_to_timeline_media.count;
-          resolve(postCount);
-        } else {
-          console.log("Could not find post count in API response", json);
-          reject(new Error("Could not find post count"));
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching post count:", error);
-        reject(error);
-      });
-  });
-}
 export function getProfileUsername(): string | null {
   const match = location.pathname.match(/^\/@?([^\/]+)/);
   if (match && match[1]) {
@@ -573,518 +309,61 @@ export function getProfileUsername(): string | null {
 }
 
 /**
- * Get user ID from username
+ * Read the profile's posts, apply the filters, then hand the result to the downloader.
+ * Progress goes to the side panel through profile-report.
  */
-export function getUserId(username: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    // Check if we already have the user ID cached
-    for (let i in state.rangeid) {
-      if (state.rangeid[i].pkid === username) {
-        resolve(state.rangeid[i].userid);
-        return;
-      }
-    }
-
-    // Get CSRF token
-    const token = document.documentElement.outerHTML.match(
-      /csrf_token":".*?(?=")/g,
-    );
-    const csrfToken = token && token[0] ? token[0].split('"')[2] : "";
-
-    // Fetch user profile to get ID
-    fetch(
-      `https://i.instagram.com/api/v1/users/web_profile_info/?username=${username}`,
-      {
-        method: "GET",
-        headers: {
-          "x-instagram-ajax": "1016349901",
-          "x-asbd-id": "129477",
-          "x-ig-app-id": "936619743392459",
-          "x-requested-with": "XMLHttpRequest",
-          "x-csrftoken": csrfToken,
-        },
-        credentials: "include",
-      },
-    )
-      .then((response) => response.json())
-      .then((json) => {
-        if (json.data && json.data.user && json.data.user.id) {
-          const userId = json.data.user.id;
-          state.rangeid.push({ pkid: username, userid: userId });
-          resolve(userId);
-        } else {
-          reject(new Error("Could not find user ID"));
-        }
-      })
-      .catch(reject);
-  });
-}
-
-export function fetchProfilePosts(
-  userId: LooseJson,
-  username: LooseJson,
-  csrfToken: LooseJson,
-  after: string | null = null,
-  allPosts: LooseJson[] = [],
-) {
-  state.usernamex = username;
-  return new Promise<LooseJson[]>((resolve, reject) => {
-    // Build request parameters based on whether this is initial load or pagination
-    let variablesObj;
-
-    if (after) {
-      // For pagination requests
-      variablesObj = {
-        data: {
-          count: 12,
-          include_reel_media_seen_timestamp: true,
-          include_relationship_info: true,
-          latest_besties_reel_media: true,
-          latest_reel_media: true,
-        },
-        username: username,
-        __relay_internal__pv__PolarisIsLoggedInrelayprovider: true,
-        __relay_internal__pv__PolarisShareSheetV3relayprovider: false,
-        first: 12,
-        last: null,
-        after: after,
-        before: null,
-      };
-    } else {
-      // For initial request
-      variablesObj = {
-        data: {
-          count: 12,
-          include_reel_media_seen_timestamp: true,
-          include_relationship_info: true,
-          latest_besties_reel_media: true,
-          latest_reel_media: true,
-        },
-        username: username,
-        __relay_internal__pv__PolarisIsLoggedInrelayprovider: true,
-        __relay_internal__pv__PolarisShareSheetV3relayprovider: false,
-      };
-    }
-
-    // Log the request for debugging
-    console.log(
-      `Fetching profile posts for ${username}${after ? ` with cursor: ${after}` : ""}`,
-    );
-    console.log("Variables:", JSON.stringify(variablesObj));
-
-    // Determine which endpoint to use based on whether we're paginating
-    const endpoint = "https://www.instagram.com/graphql/query";
-    // Prepare the request
-    const requestOptions: RequestInit = {
-      method: "POST",
-      headers: {
-        "x-instagram-ajax": "1016349901",
-        "x-asbd-id": "129477",
-        "x-ig-app-id": "936619743392459",
-        "x-requested-with": "XMLHttpRequest",
-        "x-csrftoken": csrfToken,
-        "content-type": "application/x-www-form-urlencoded",
-      },
-      credentials: "include",
-    };
-
-    if (after) {
-      // For pagination, use URL parameters instead of form data
-      requestOptions.body = new URLSearchParams({
-        fb_dtsg: state.tokendsg,
-        variables: JSON.stringify(variablesObj),
-        doc_id: 9750506811647048,
-        fb_api_caller_class: "RelayModern",
-        fb_api_req_friendly_name: "PolarisProfilePostsQuery",
-        server_timestamps: true,
-      } as unknown as Record<string, string>).toString();
-
-      fetch(endpoint, requestOptions).then(processResponse).catch(handleError);
-    } else {
-      // For initial request, use form data
-      requestOptions.body = new URLSearchParams({
-        fb_dtsg: state.tokendsg,
-        variables: JSON.stringify(variablesObj),
-        doc_id: 9750506811647048,
-        fb_api_caller_class: "RelayModern",
-        fb_api_req_friendly_name: "PolarisProfilePostsQuery",
-        server_timestamps: true,
-      } as unknown as Record<string, string>).toString();
-
-      fetch(endpoint, requestOptions).then(processResponse).catch(handleError);
-    }
-
-    function processResponse(response: LooseJson) {
-      if (!response.ok) {
-        throw new Error(`Network response was not ok: ${response.status}`);
-      }
-      return response.json().then(processData);
-    }
-
-    function processData(json: LooseJson) {
-      console.log("Response received:", json);
-
-      // Extract posts from the response
-      let posts: LooseJson[] = [];
-      let hasNextPage = false;
-      let endCursor: string | null = null;
-
-      try {
-        // Find the media data in different possible locations
-        let mediaData = null;
-
-        if (
-          json.data &&
-          json.data.user &&
-          json.data.user.edge_owner_to_timeline_media
-        ) {
-          // GraphQL query hash response format
-          mediaData = json.data.user.edge_owner_to_timeline_media;
-          hasNextPage = mediaData.page_info.has_next_page;
-          endCursor = mediaData.page_info.end_cursor;
-        } else if (
-          json.data &&
-          json.data.xdt_api__v1__feed__user_timeline_graphql_connection
-        ) {
-          // Standard API response format
-          mediaData =
-            json.data.xdt_api__v1__feed__user_timeline_graphql_connection;
-          hasNextPage = mediaData.page_info.has_next_page;
-          endCursor = mediaData.page_info.end_cursor;
-        }
-
-        if (mediaData && mediaData.edges) {
-          // Process each post
-          mediaData.edges.forEach((edge: LooseJson) => {
-            // Handle different node structures
-            const node = edge.node.media || edge.node;
-
-            // Log the raw node for debugging
-            console.log("Processing post node:", node);
-
-            // Extract media ID
-            const mediaId = node.pk || node.id;
-
-            // Try to find display URL in different possible locations
-            let displayUrl = node.display_url;
-            if (!displayUrl && node.thumbnail_src) {
-              displayUrl = node.thumbnail_src;
-            }
-            if (
-              !displayUrl &&
-              node.image_versions2 &&
-              node.image_versions2.candidates &&
-              node.image_versions2.candidates.length > 0
-            ) {
-              displayUrl = getBestImageUrl(node.image_versions2.candidates);
-            }
-
-            // Try to find video URL in different possible locations
-            let videoUrl = node.video_url;
-            if (
-              !videoUrl &&
-              node.video_versions &&
-              node.video_versions.length > 0
-            ) {
-              videoUrl = node.video_versions[0].url;
-            }
-
-            // Create post object with all available data
-            const post = {
-              id: node.id,
-              shortcode: node.shortcode || node.code,
-              display_url: displayUrl,
-              is_video: node.is_video || !!videoUrl,
-              video_url: videoUrl,
-              media_id: mediaId,
-              is_carousel: false,
-              carousel_items: [],
-            };
-
-            // Handle carousel posts (multi-photo/video posts)
-            if (
-              node.edge_sidecar_to_children &&
-              node.edge_sidecar_to_children.edges
-            ) {
-              post.is_carousel = true;
-              post.carousel_items = node.edge_sidecar_to_children.edges.map(
-                (e: LooseJson) => {
-                  const carouselNode = e.node;
-
-                  // Try to find display URL for carousel item
-                  let itemDisplayUrl = carouselNode.display_url;
-                  if (!itemDisplayUrl && carouselNode.thumbnail_src) {
-                    itemDisplayUrl = carouselNode.thumbnail_src;
-                  }
-                  if (
-                    !itemDisplayUrl &&
-                    carouselNode.image_versions2 &&
-                    carouselNode.image_versions2.candidates &&
-                    carouselNode.image_versions2.candidates.length > 0
-                  ) {
-                    itemDisplayUrl = getBestImageUrl(
-                      carouselNode.image_versions2.candidates,
-                    );
-                  }
-
-                  // Try to find video URL for carousel item
-                  let itemVideoUrl = carouselNode.video_url;
-                  if (
-                    !itemVideoUrl &&
-                    carouselNode.video_versions &&
-                    carouselNode.video_versions.length > 0
-                  ) {
-                    itemVideoUrl = carouselNode.video_versions[0].url;
-                  }
-
-                  return {
-                    id: carouselNode.id,
-                    display_url: itemDisplayUrl,
-                    is_video: carouselNode.is_video || !!itemVideoUrl,
-                    video_url: itemVideoUrl,
-                    media_id: carouselNode.pk || carouselNode.id,
-                  };
-                },
-              );
-            } else if (node.carousel_media && node.carousel_media.length > 0) {
-              // Alternative carousel format
-              post.is_carousel = true;
-              post.carousel_items = node.carousel_media.map((item: LooseJson) => {
-                // Try to find display URL for carousel item
-                let itemDisplayUrl = null;
-                if (
-                  item.image_versions2 &&
-                  item.image_versions2.candidates &&
-                  item.image_versions2.candidates.length > 0
-                ) {
-                  itemDisplayUrl = getBestImageUrl(
-                    item.image_versions2.candidates,
-                  );
-                }
-
-                // Try to find video URL for carousel item
-                let itemVideoUrl = null;
-                if (item.video_versions && item.video_versions.length > 0) {
-                  itemVideoUrl = item.video_versions[0].url;
-                }
-
-                return {
-                  id: item.pk || item.id,
-                  display_url: itemDisplayUrl,
-                  is_video: !!item.video_versions || !!itemVideoUrl,
-                  video_url: itemVideoUrl,
-                  media_id: item.pk || item.id,
-                };
-              });
-            }
-
-            posts.push(post);
-          });
-        }
-
-        console.log(`Extracted ${posts.length} posts from response`);
-
-        // Summary of media types for debugging
-        const videoCount = posts.filter((p) => p.is_video).length;
-        const carouselCount = posts.filter((p) => p.is_carousel).length;
-        console.log(
-          `Media types: ${videoCount} videos, ${carouselCount} carousels, ${posts.length - videoCount - carouselCount} photos`,
-        );
-
-        // Check for posts without display_url
-        const missingDisplayUrl = posts.filter((p) => !p.display_url).length;
-        if (missingDisplayUrl > 0) {
-          console.warn(
-            `Warning: ${missingDisplayUrl} posts are missing display_url`,
-          );
-        }
-
-        // Check for video posts without video_url
-        const missingVideoUrl = posts.filter(
-          (p) => p.is_video && !p.video_url,
-        ).length;
-        if (missingVideoUrl > 0) {
-          console.warn(
-            `Warning: ${missingVideoUrl} video posts are missing video_url`,
-          );
-        }
-
-        // Combine with previous posts
-        const combinedPosts = [...allPosts, ...posts];
-
-        // If there are more pages and we haven't hit the limit, fetch the next page
-        if (hasNextPage && endCursor && combinedPosts.length < 1000) {
-          console.log(
-            `Found more posts. Cursor: ${endCursor}. Fetching next page...`,
-          );
-
-          // Wait a bit to avoid rate limiting
-          setTimeout(() => {
-            fetchProfilePosts(
-              userId,
-              username,
-              csrfToken,
-              endCursor,
-              combinedPosts,
-            )
-              .then(resolve)
-              .catch(reject);
-          }, 1000);
-        } else {
-          console.log(
-            `Finished fetching posts. Total: ${combinedPosts.length}`,
-          );
-          resolve(combinedPosts);
-        }
-      } catch (e) {
-        console.error("Error processing profile posts data:", e);
-        reject(e);
-      }
-    }
-
-    function handleError(error: LooseJson) {
-      console.error("Error fetching profile posts:", error);
-
-      // If we already have some posts, return those instead of failing
-      if (allPosts.length > 0) {
-        console.log(
-          `Returning ${allPosts.length} posts that were already fetched`,
-        );
-        resolve(allPosts);
-      } else {
-        reject(error);
-      }
-    }
-  });
-}
-export function fetchProfilePostsViaAPI(this: HTMLElement | undefined): Promise<LooseJson[]> | undefined {
-  // Get username from URL
+export function fetchProfilePostsViaAPI(filtersIn: ProfileFilters): Promise<LooseJson[]> {
   const username = getProfileUsername();
   if (!username) {
-    showProfileDownloadError(this, "Couldn't identify username");
-    state.isProcessingProfile = false;
-    return Promise.reject("Couldn't identify username");
+    reportError("Could not tell which profile this is");
+    return Promise.reject(new Error("Couldn't identify username"));
   }
 
-  // Update button text and show initial progress
-  const buttonElement = document.querySelector<HTMLElement>(
-    ".eph_toolkit_profile_download_btn",
-  );
-  if (buttonElement) {
-    showProgressBar(buttonElement, 0, "Preparing download...");
-  }
+  const filters: ProfileFilters = filtersIn && typeof filtersIn === "object" ? { ...filtersIn } : {};
+  if (!filters.postsRange) filters.postsRange = { from: 1, to: 20 };
 
-  // Get filters from session storage
-  const filtersJson =
-    localStorage.getItem("eph_toolkit_filters") ||
-    sessionStorage.getItem("eph_toolkit_filters");
-  let filters: ProfileFilters = {};
+  reportProgress(0, "Preparing");
 
-  if (filtersJson) {
-    try {
-      filters = JSON.parse(filtersJson);
-      console.log("Applied filters:", filters);
-    } catch (e) {
-      console.error("Error parsing filters:", e);
-    }
-  }
+  return collectPosts(username, filters.postsRange.to)
+    .then((posts) => {
+      if (posts.length === 0) throw new Error("No posts found. The account may be private or empty.");
 
-  // If no filters set, create default
-  if (!filters.postsRange) {
-    filters.postsRange = { from: 1, to: 20 };
-  }
-
-  // Store the post count we need to fetch
-  const postsNeeded = filters.postsRange.to - filters.postsRange.from + 1;
-  console.log(`Posts needed: ${postsNeeded}`);
-
-  return new Promise<LooseJson[]>((resolve, reject) => {
-    // First get user ID
-    getUserId(username)
-      .then((userId) => {
-        if (!userId) throw new Error("Could not get user ID");
-
-        if (buttonElement) {
-          showProgressBar(buttonElement, 10, "Fetching posts...");
-        }
-
-        const token = document.documentElement.outerHTML.match(
-          /csrf_token":".*?(?=")/g,
-        );
-        const csrfToken = token && token[0] ? token[0].split('"')[2] : "";
-
-        // Fetch posts using GraphQL API with early stopping
-        return fetchProfilePostsWithEarlyStopping(
-          userId,
-          username,
-          csrfToken,
-          filters.postsRange.to,
-          buttonElement,
-        );
-      })
-      .then((posts) => {
-        if (!posts || posts.length === 0) {
-          throw new Error("No posts found");
-        }
-
-        console.log(`Successfully fetched ${posts.length} posts via API`);
-
-        if (buttonElement) {
-          showProgressBar(
-            buttonElement,
-            60,
-            `Processing ${posts.length} posts...`,
-          );
-        }
-
-        // Process each post to ensure like_count and comment_count are extracted
-        const processedPosts = posts.map(function (post: LooseJson, index: LooseJson) {
-          var processed = processPostData(post);
-          processed.wall_order = index + 1;
-          return processed;
-        });
-
-        // Apply filters
-        let filteredPosts = processedPosts;
-
-        if (buttonElement) {
-          showProgressBar(buttonElement, 70, "Applying filters...");
-        }
-
-        // Apply filters
-        if (filters) {
-          filteredPosts = applyFilters(processedPosts, filters);
-          console.log(
-            `After filtering: ${filteredPosts.length} posts selected for download`,
-          );
-        }
-
-        // Store filtered posts in cache
-        state.profilePostsCache[username] = filteredPosts;
-
-        if (buttonElement) {
-          showProgressBar(buttonElement, 80, "Preparing download...");
-        }
-
-        // Process download
-        if (buttonElement) {
-          processProfileDownload(buttonElement, username, filteredPosts);
-        }
-
-        // Clear the filters from storage
-        localStorage.removeItem("eph_toolkit_filters");
-        sessionStorage.removeItem("eph_toolkit_filters");
-
-        resolve(filteredPosts);
-      })
-      .catch((error) => {
-        console.error("Error in profile download:", error);
-        if (buttonElement) {
-          showProfileDownloadError(buttonElement, error.message);
-        }
-        reject(error);
+      reportProgress(60, `Processing ${posts.length} posts`);
+      const processedPosts = posts.map(function (post: LooseJson, index: number) {
+        const processed = processPostData(post);
+        processed.wall_order = index + 1;
+        return processed;
       });
-  });
+
+      reportProgress(70, "Applying filters");
+      const filteredPosts = applyFilters(processedPosts, filters);
+      state.profilePostsCache[username] = filteredPosts;
+
+      reportProgress(80, `Preparing ${filteredPosts.length} posts`);
+      processProfileDownload(username, filteredPosts);
+      return filteredPosts;
+    })
+    .catch((error: unknown) => {
+      console.error("Error in profile download:", error);
+      reportError(error instanceof Error && error.message ? error.message : "Something went wrong while reading the profile");
+      throw error;
+    });
+}
+
+/** Read pages of 12 until `wanted` posts are in hand or the profile runs out. */
+async function collectPosts(username: string, wanted: number): Promise<LooseJson[]> {
+  const all: LooseJson[] = [];
+  let cursor: string | null = null;
+  reportProgress(10, "Reading posts");
+  for (;;) {
+    const page = await fetchPostsPage(username, cursor);
+    all.push(...page.posts);
+    reportProgress(20 + Math.min(all.length / wanted, 1) * 40, `Read ${Math.min(all.length, wanted)} of ${wanted} posts`);
+    if (all.length >= wanted || !page.hasNext || !page.cursor) break;
+    cursor = page.cursor;
+    await new Promise((r) => setTimeout(r, 600)); // be polite to Instagram
+  }
+  return all.slice(0, wanted);
 }
 
 /**
@@ -1144,27 +423,22 @@ export async function fillMissingVideoUrls(posts: ProfilePost[]) {
     } catch (e) {}
   }
 }
-export function processProfileDownload(buttonElement: HTMLElement, username: string, posts: ProfilePost[]): void {
+export function processProfileDownload(username: string, posts: ProfilePost[]): void {
   if (posts.length === 0) {
-    showProfileDownloadError(buttonElement, "No posts found");
+    reportError("No posts matched those filters");
     return;
   }
 
   if (!(posts as ProfilePost).__videoFilled) {
     (posts as ProfilePost).__videoFilled = true;
-    showProgressBar(buttonElement, 80, "Đang lấy link video...");
+    reportProgress(80, "Looking up video links");
     fillMissingVideoUrls(posts).then(function () {
-      processProfileDownload(buttonElement, username, posts);
+      processProfileDownload(username, posts);
     });
     return;
   }
 
-  // Update progress bar for preparing download
-  showProgressBar(
-    buttonElement,
-    85,
-    `Preparing to download ${posts.length} posts...`,
-  );
+  reportProgress(85, `Preparing ${posts.length} posts`);
 
   // Prepare media data for download
   const mediaData = posts.map((post) => {
@@ -1253,33 +527,11 @@ export function processProfileDownload(buttonElement: HTMLElement, username: str
     };
   });
 
-  // Update progress bar to downloading state
-  showProgressBar(buttonElement, 90, `Starting download...`);
+  reportProgress(90, "Starting download");
 
-  // Send to background script for downloading
-  chrome.runtime.sendMessage(
-    {
-      profileDownload: true,
-      username: username,
-      posts: mediaData,
-    },
-    (response) => {
-      // Update button status based on response
-      if (response && response.success) {
-        showProgressBar(buttonElement, 100, `Download Complete!`);
-
-        // Reset after 5 seconds
-        setTimeout(() => {
-          buttonElement.innerHTML = `
-                    <span class="eph_toolkit_icon"></span>
-                    <span class="eph_toolkit_text">Download All</span>
-                `;
-          state.isProcessingProfile = false;
-        }, 5000);
-      } else {
-        showProfileDownloadCaution(buttonElement, "Waiting for background!!");
-      }
-    },
-  );
+  // The service worker answers through tab messages (downloadProgress / downloadComplete /
+  // downloadError), which listeners.ts forwards to the side panel.
+  void chrome.runtime
+    .sendMessage({ profileDownload: true, username: username, posts: mediaData })
+    .catch(() => reportError("The download did not start. Reload the Instagram tab and try again."));
 }
-
