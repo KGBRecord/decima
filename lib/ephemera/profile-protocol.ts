@@ -9,16 +9,25 @@ export interface ProfileFilterInput {
   sorting: { mostLikes: number | null; mostComments: number | null };
 }
 
+/** What to put in the zip. Posts are the default; highlights and the profile picture are opt-in. */
+export interface ProfileInclude {
+  posts: boolean;
+  highlights: boolean;
+  avatar: boolean;
+}
+
 /** Panel -> page. */
 export type ProfileRequest =
   | { type: 'EPH_PROFILE_INFO' }
-  | { type: 'EPH_PROFILE_START'; filters: ProfileFilterInput };
+  | { type: 'EPH_PROFILE_START'; filters: ProfileFilterInput; include: ProfileInclude };
 
 /** Page -> panel, answer to EPH_PROFILE_INFO. `totalPosts` is null when Instagram would not tell. */
 export interface ProfileInfo {
   ok: boolean;
   username?: string;
   totalPosts?: number | null;
+  /** number of highlight reels, null when Instagram would not say */
+  highlights?: number | null;
   error?: string;
 }
 

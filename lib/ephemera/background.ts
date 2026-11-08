@@ -223,7 +223,7 @@ async function handleMessage(
   }
   if (message.profileDownload) {
     // `sender.tab` is assumed present (a throw here is caught by the caller, as before).
-    handleProfileDownload(message.username, message.posts as IgPost[], sender.tab!.id);
+    handleProfileDownload(message.username, message.posts as IgPost[], sender.tab!.id, message.highlights ?? [], message.avatar ?? null);
     return;
   }
   if (message.downloadv1) {

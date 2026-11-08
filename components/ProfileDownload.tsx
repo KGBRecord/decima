@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CalendarRange, Download, Heart, Layers, ListFilter, Loader2, MessageCircle, RotateCcw, ShieldCheck, TriangleAlert, CircleCheck } from 'lucide-react';
+import { CalendarRange, CircleCheck, CircleUserRound, Download, Heart, Images, Layers, ListFilter, Loader2, MessageCircle, RotateCcw, ShieldCheck, TriangleAlert, GalleryHorizontalEnd } from 'lucide-react';
 import clsx from 'clsx';
 import type { ProfileFilterInput, ProfileInfo, ProfileProgress, ProfileStartResult } from '@/lib/ephemera/profile-protocol';
 import { Button, Card, Progress, inputCls } from './ui';
@@ -33,6 +33,10 @@ function Pair({ children }: { children: React.ReactNode }) {
 export function ProfileDownload({ tabId, username }: { tabId: number; username: string }) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [total, setTotal] = useState<number | null>(null);
+  const [highlightCount, setHighlightCount] = useState<number | null>(null);
+  const [wantPosts, setWantPosts] = useState(true);
+  const [wantHighlights, setWantHighlights] = useState(false);
+  const [wantAvatar, setWantAvatar] = useState(false);
   const [message, setMessage] = useState('');
   const [percent, setPercent] = useState(0);
 
@@ -60,6 +64,7 @@ export function ProfileDownload({ tabId, username }: { tabId: number; username: 
       const info = (await chrome.tabs.sendMessage(tabId, { type: 'EPH_PROFILE_INFO' })) as ProfileInfo | undefined;
       if (!info?.ok) throw new Error(info?.error || 'The page did not answer.');
       setTotal(info.totalPosts ?? null);
+      setHighlightCount(info.highlights ?? null);
       setPhase('ready');
     } catch (e) {
       setMessage(e instanceof Error && /Receiving end/.test(e.message) ? 'The Instagram tab has not loaded Ephemera yet. Reload the tab and try again.' : e instanceof Error ? e.message : 'Could not read this profile.');
@@ -94,6 +99,11 @@ export function ProfileDownload({ tabId, username }: { tabId: number; username: 
   const narrowed = [likesMin, likesMax, cmtMin, cmtMax, dateFrom, dateTo].some((v) => v.trim() !== '') || (topLike && topCmt);
   const count = topOnly !== null ? Math.min(topOnly, inRange) : inRange;
   const upTo = narrowed || topOnly !== null;
+  const nothing = !wantPosts && !wantHighlights && !wantAvatar;
+  const extras = [wantHighlights && 'highlights', wantAvatar && (wantPosts || wantHighlights ? 'picture' : 'profile picture')].filter(Boolean) as string[];
+  const label = wantPosts
+    ? `Download ${upTo ? 'up to ' : ''}${count} post${count === 1 ? '' : 's'}${extras.length ? ` + ${extras.join(' + ')}` : ''}`
+    : extras.length ? `Download ${extras.join(' + ')}` : 'Choose what to download';
 
   const start = async () => {
     const filters: ProfileFilterInput = {
@@ -105,7 +115,7 @@ export function ProfileDownload({ tabId, username }: { tabId: number; username: 
     };
     setPhase('running'); setPercent(0); setMessage('Starting');
     try {
-      const res = (await chrome.tabs.sendMessage(tab.current, { type: 'EPH_PROFILE_START', filters })) as ProfileStartResult | undefined;
+      const res = (await chrome.tabs.sendMessage(tab.current, { type: 'EPH_PROFILE_START', filters, include: { posts: wantPosts, highlights: wantHighlights, avatar: wantAvatar } })) as ProfileStartResult | undefined;
       if (!res?.ok) { setMessage(res?.error || 'The page refused to start.'); setPhase('error'); }
     } catch {
       setMessage('Lost contact with the Instagram tab. Reload it and try again.'); setPhase('error');
@@ -133,6 +143,15 @@ export function ProfileDownload({ tabId, username }: { tabId: number; username: 
 
       {(phase === 'ready' || phase === 'running' || phase === 'done' || (phase === 'error' && total !== null)) && (
         <fieldset disabled={busy} className="m-0 min-w-0 space-y-4 border-0 p-0 disabled:opacity-60">
+          <Section icon={Images} title="What to download">
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-zinc-300"><input type="checkbox" className="eph-chk" checked={wantPosts} onChange={(e) => setWantPosts(e.target.checked)} /><GalleryHorizontalEnd className="h-3.5 w-3.5 shrink-0 text-zinc-400" /><span className="flex-1">Posts</span><span className="text-[11px] text-zinc-500">{total ?? '?'}</span></label>
+              <label className="flex items-center gap-2 text-zinc-300"><input type="checkbox" className="eph-chk" checked={wantHighlights} onChange={(e) => setWantHighlights(e.target.checked)} /><Layers className="h-3.5 w-3.5 shrink-0 text-zinc-400" /><span className="flex-1">Highlights</span><span className="text-[11px] text-zinc-500">{highlightCount === null ? '?' : highlightCount === 0 ? 'none' : `${highlightCount} ${highlightCount === 1 ? 'reel' : 'reels'}, all items`}</span></label>
+              <label className="flex items-center gap-2 text-zinc-300"><input type="checkbox" className="eph-chk" checked={wantAvatar} onChange={(e) => setWantAvatar(e.target.checked)} /><CircleUserRound className="h-3.5 w-3.5 shrink-0 text-zinc-400" /><span className="flex-1">Profile picture</span><span className="text-[11px] text-zinc-500">full size</span></label>
+            </div>
+          </Section>
+
+          {wantPosts && (<>
           <Section icon={Layers} title="Range" hint={`${inRange} post${inRange === 1 ? '' : 's'} in range, newest first`}>
             <Pair>
               <input aria-label="First post" className={clsx(inputCls, 'text-center')} type="number" min={1} max={total ?? undefined} placeholder="1" value={from} onChange={(e) => setFrom(e.target.value)} onBlur={() => { if (from.trim() !== '') setFrom(String(fromN)); }} />
@@ -173,6 +192,7 @@ export function ProfileDownload({ tabId, username }: { tabId: number; username: 
               </Pair>
             </div>
           </Section>
+          </>)}
         </fieldset>
       )}
 
@@ -193,9 +213,9 @@ export function ProfileDownload({ tabId, username }: { tabId: number; username: 
         </div>
       )}
 
-      <div className="flex gap-2 pt-2">
+      <div className="flex min-w-0 gap-2 pt-2">
         {(phase === 'ready' || phase === 'done' || (phase === 'error' && total !== null)) && (
-          <Button className="flex-1" onClick={start}><Download className="h-4 w-4" />Download {upTo ? 'up to ' : ''}{count} post{count === 1 ? '' : 's'}</Button>
+          <Button className="min-w-0 flex-1" onClick={start} disabled={nothing} title={label}><Download className="h-4 w-4 shrink-0" /><span className="truncate">{label}</span></Button>
         )}
         {busy && <Button className="flex-1" disabled><Loader2 className="h-4 w-4 animate-spin" />Working</Button>}
         {(phase === 'error' && total === null) && <Button className="flex-1" variant="ghost" onClick={() => void load()}><RotateCcw className="h-4 w-4" />Try again</Button>}

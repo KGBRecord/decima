@@ -26,7 +26,7 @@ export function registerProfileBridge(): void {
         return false;
       }
       fetchProfileSummary(username)
-        .then((s) => sendResponse({ ok: true, username, totalPosts: s.totalPosts } satisfies ProfileInfo))
+        .then((s) => sendResponse({ ok: true, username, totalPosts: s.totalPosts, highlights: s.highlightCount } satisfies ProfileInfo))
         .catch((e: unknown) => sendResponse({ ok: false, error: e instanceof Error ? e.message : 'Could not read this profile.' } satisfies ProfileInfo));
       return true;
     }
@@ -42,7 +42,7 @@ export function registerProfileBridge(): void {
       }
       state.isProcessingProfile = true;
       sendResponse({ ok: true } satisfies ProfileStartResult);
-      fetchProfilePostsViaAPI(request.filters).catch((e: unknown) => {
+      fetchProfilePostsViaAPI(request.filters, request.include).catch((e: unknown) => {
         // fetchProfilePostsViaAPI has already reported the reason to the panel
         console.error('[Ephemera] profile run failed:', e);
         reportError(e instanceof Error && e.message ? e.message : 'The run failed.');

@@ -1,6 +1,8 @@
 import type { LooseJson, ProfileFilters, ProfilePost } from './types';
 import { findVideoUrlDeep, getBestImageUrl } from './story-fetch';
-import { fetchPostsPage } from './profile-graphql';
+import type { AvatarPayload, HighlightPayload } from '@/lib/ephemera/types';
+import type { ProfileInclude } from '@/lib/ephemera/profile-protocol';
+import { avatarPayload, fetchHighlight, fetchHighlightTray, fetchPostsPage, fetchProfileSummary } from './profile-graphql';
 import { reportError, reportProgress } from './profile-report';
 import { state } from './state';
 
@@ -312,42 +314,83 @@ export function getProfileUsername(): string | null {
  * Read the profile's posts, apply the filters, then hand the result to the downloader.
  * Progress goes to the side panel through profile-report.
  */
-export function fetchProfilePostsViaAPI(filtersIn: ProfileFilters): Promise<LooseJson[]> {
+export async function fetchProfilePostsViaAPI(filtersIn: ProfileFilters, include: ProfileInclude): Promise<void> {
   const username = getProfileUsername();
   if (!username) {
     reportError("Could not tell which profile this is");
-    return Promise.reject(new Error("Couldn't identify username"));
+    throw new Error("Couldn't identify username");
+  }
+  if (!include.posts && !include.highlights && !include.avatar) {
+    reportError("Tick at least one thing to download.");
+    throw new Error("Nothing selected");
   }
 
   const filters: ProfileFilters = filtersIn && typeof filtersIn === "object" ? { ...filtersIn } : {};
   if (!filters.postsRange) filters.postsRange = { from: 1, to: 20 };
 
-  reportProgress(0, "Preparing");
+  try {
+    reportProgress(0, "Preparing");
 
-  return collectPosts(username, filters.postsRange.to)
-    .then((posts) => {
-      if (posts.length === 0) throw new Error("No posts found. The account may be private or empty.");
-
+    let filteredPosts: LooseJson[] = [];
+    if (include.posts) {
+      const posts = await collectPosts(username, filters.postsRange.to);
+      if (posts.length === 0 && !include.highlights && !include.avatar) {
+        throw new Error("No posts found. The account may be private or empty.");
+      }
       reportProgress(60, `Processing ${posts.length} posts`);
       const processedPosts = posts.map(function (post: LooseJson, index: number) {
         const processed = processPostData(post);
         processed.wall_order = index + 1;
         return processed;
       });
-
-      reportProgress(70, "Applying filters");
-      const filteredPosts = applyFilters(processedPosts, filters);
+      reportProgress(65, "Applying filters");
+      filteredPosts = applyFilters(processedPosts, filters);
       state.profilePostsCache[username] = filteredPosts;
+      if (filteredPosts.length === 0 && !include.highlights && !include.avatar) {
+        throw new Error("No posts matched those filters");
+      }
+    }
 
-      reportProgress(80, `Preparing ${filteredPosts.length} posts`);
-      processProfileDownload(username, filteredPosts);
-      return filteredPosts;
-    })
-    .catch((error: unknown) => {
-      console.error("Error in profile download:", error);
-      reportError(error instanceof Error && error.message ? error.message : "Something went wrong while reading the profile");
-      throw error;
-    });
+    let highlights: HighlightPayload[] = [];
+    let avatarUrl: string | null = null;
+    if (include.highlights || include.avatar) {
+      reportProgress(68, "Reading the profile");
+      const summary = await fetchProfileSummary(username);
+      if (include.avatar) {
+        avatarUrl = summary.avatarUrl;
+        if (!avatarUrl) throw new Error("Instagram did not give out this profile picture.");
+      }
+      if (include.highlights && summary.userId) {
+        highlights = await collectHighlights(summary.userId);
+      }
+    }
+
+    if (filteredPosts.length === 0 && highlights.every((h) => h.items.length === 0) && !avatarUrl) {
+      throw new Error("There was nothing to download. This profile has no highlights.");
+    }
+
+    processProfileDownload(username, filteredPosts, highlights, avatarPayload(avatarUrl));
+  } catch (error: unknown) {
+    console.error("Error in profile download:", error);
+    reportError(error instanceof Error && error.message ? error.message : "Something went wrong while reading the profile");
+    throw error;
+  }
+}
+
+/** Every highlight with its items, one request per reel. A reel that fails is skipped, not fatal. */
+async function collectHighlights(userId: string): Promise<HighlightPayload[]> {
+  const tray = await fetchHighlightTray(userId);
+  const out: HighlightPayload[] = [];
+  for (const [i, reel] of tray.entries()) {
+    reportProgress(68 + (i / Math.max(tray.length, 1)) * 12, `Reading highlight ${i + 1} of ${tray.length}`);
+    try {
+      out.push(await fetchHighlight(reel));
+    } catch (e) {
+      console.error("[Ephemera] highlight skipped:", reel.id, e);
+    }
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  return out;
 }
 
 /** Read pages of 12 until `wanted` posts are in hand or the profile runs out. */
@@ -423,22 +466,22 @@ export async function fillMissingVideoUrls(posts: ProfilePost[]) {
     } catch (e) {}
   }
 }
-export function processProfileDownload(username: string, posts: ProfilePost[]): void {
-  if (posts.length === 0) {
-    reportError("No posts matched those filters");
-    return;
-  }
-
-  if (!(posts as ProfilePost).__videoFilled) {
+export function processProfileDownload(
+  username: string,
+  posts: ProfilePost[],
+  highlights: HighlightPayload[],
+  avatar: AvatarPayload | null,
+): void {
+  if (posts.length > 0 && !(posts as ProfilePost).__videoFilled) {
     (posts as ProfilePost).__videoFilled = true;
     reportProgress(80, "Looking up video links");
     fillMissingVideoUrls(posts).then(function () {
-      processProfileDownload(username, posts);
+      processProfileDownload(username, posts, highlights, avatar);
     });
     return;
   }
 
-  reportProgress(85, `Preparing ${posts.length} posts`);
+  reportProgress(85, "Preparing the download");
 
   // Prepare media data for download
   const mediaData = posts.map((post) => {
@@ -532,6 +575,6 @@ export function processProfileDownload(username: string, posts: ProfilePost[]): 
   // The service worker answers through tab messages (downloadProgress / downloadComplete /
   // downloadError), which listeners.ts forwards to the side panel.
   void chrome.runtime
-    .sendMessage({ profileDownload: true, username: username, posts: mediaData })
+    .sendMessage({ profileDownload: true, username: username, posts: mediaData, highlights, avatar })
     .catch(() => reportError("The download did not start. Reload the Instagram tab and try again."));
 }

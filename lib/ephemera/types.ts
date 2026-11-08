@@ -7,6 +7,25 @@ export interface DownloadItem {
   pk?: string | number;
 }
 
+/** One item of an Instagram highlight, already resolved to a file URL by the content script. */
+export interface HighlightItem {
+  id: string | number;
+  type: 'image' | 'video';
+  url: string;
+  /** unix seconds */
+  taken_at?: number;
+}
+
+export interface HighlightPayload {
+  id: string;
+  title: string;
+  items: HighlightItem[];
+}
+
+export interface AvatarPayload {
+  url: string;
+}
+
 /** Messages posted by the story-* content scripts (all fields optional; shape is loose by design). */
 export interface EphemeraMessage {
   ephemeraRun?: boolean;
@@ -17,6 +36,8 @@ export interface EphemeraMessage {
   profileDownload?: boolean;
   username?: string;
   posts?: IgPost[];
+  highlights?: HighlightPayload[];
+  avatar?: AvatarPayload | null;
   openfacebook?: boolean;
   downloadv1?: string;
   download?: DownloadItem[];

@@ -1,5 +1,7 @@
 import JSZip from 'jszip';
 import type {
+  AvatarPayload,
+  HighlightPayload,
   IgCandidate,
   IgCaption,
   IgMediaLike,
@@ -186,10 +188,25 @@ const normalizeMedia = (post: IgPost): NormalizedMedia[] => {
   });
 };
 
+/** Fetch one file for the zip. Returns null (and says why) instead of throwing, so one bad link never sinks the run. */
+async function fetchFile(url: string): Promise<{ blob: Blob } | { error: string }> {
+  try {
+    const res = await fetch(url, { method: "GET", mode: "cors", cache: "no-cache", referrerPolicy: "no-referrer" });
+    if (!res.ok) return { error: `HTTP ${res.status}` };
+    return { blob: await res.blob() };
+  } catch (e) {
+    return { error: String((e as Error | undefined)?.message || e) };
+  }
+}
+
+const pad = (n: number, w = 3): string => String(n).padStart(w, "0");
+
 export async function handleProfileDownload(
   username: string | undefined,
   posts: IgPost[],
   idtab: number | undefined,
+  highlights: HighlightPayload[] = [],
+  avatar: AvatarPayload | null = null,
 ): Promise<void> {
   // ===== Main =====
   try {
@@ -204,6 +221,8 @@ export async function handleProfileDownload(
     for (const post of posts) {
       totalFiles += normalizeMedia(post).length;
     }
+    for (const h of highlights) totalFiles += h.items.length;
+    if (avatar) totalFiles += 1;
 
     ephSendTabMessage(idtab, {
       downloadProgress: { total: totalFiles, current: 0 },
@@ -315,6 +334,28 @@ Meta:
           );
         }
       }
+    }
+
+    // Highlights: one folder per reel, items in the order Instagram shows them
+    for (const [hi, h] of highlights.entries()) {
+      const folder = zip.folder(sanitize(`highlight_${pad(hi + 1, 2)}_${h.title || h.id.replace(/\D/g, "")}`)) as JSZip;
+      for (const [ii, item] of h.items.entries()) {
+        processedFiles++;
+        ephSendTabMessage(idtab, { downloadProgress: { total: totalFiles, current: processedFiles } });
+        const got = await fetchFile(item.url);
+        const base = sanitize(`ig_${username}_highlight_${pad(hi + 1, 2)}_${pad(ii + 1)}_${item.type}`);
+        if ("blob" in got) folder.file(`${base}${guessExt(item.url, item.type)}`, got.blob, { binary: true });
+        else folder.file(`fetch_failed_${sanitize(item.id)}.txt`, `GET ${item.url}\n${got.error}`);
+      }
+    }
+
+    // Profile picture at the largest size Instagram gives out
+    if (avatar) {
+      processedFiles++;
+      ephSendTabMessage(idtab, { downloadProgress: { total: totalFiles, current: processedFiles } });
+      const got = await fetchFile(avatar.url);
+      if ("blob" in got) zip.file(`ig_${sanitize(username)}_profile_picture${guessExt(avatar.url, "image")}`, got.blob, { binary: true });
+      else zip.file("profile_picture_failed.txt", `GET ${avatar.url}\n${got.error}`);
     }
 
     // Xuất ZIP
