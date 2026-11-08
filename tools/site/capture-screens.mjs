@@ -30,7 +30,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const PORT = 9400 + Math.floor(Math.random() * 400);
 
 // ---------- sample files (random bytes; only names and sizes matter) ----------
-const FILES_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'dissend-shots-'));
+const FILES_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'decima-shots-'));
 const KB = 1024, MB = 1024 * KB;
 const sample = [
   ['DSC_0412.jpg', 1.4 * MB], ['DSC_0413.jpg', 1.1 * MB], ['DSC_0414.jpg', 1.8 * MB], ['DSC_0415.jpg', 1.3 * MB],
@@ -82,7 +82,7 @@ async function cdp(wsUrl) {
   return { send, ev, close: () => ws.close() };
 }
 
-const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'dissend-chrome-'));
+const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'decima-chrome-'));
 const chrome = spawn(CHROME, [
   '--headless=new', '--no-sandbox', '--hide-scrollbars', `--user-data-dir=${profile}`, `--remote-debugging-port=${PORT}`,
   `--disable-extensions-except=${DIST}`, `--load-extension=${DIST}`, 'about:blank',

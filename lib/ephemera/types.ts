@@ -11,7 +11,7 @@ export interface DownloadItem {
 export interface EphemeraMessage {
   ephemeraRun?: boolean;
   tabId?: number;
-  /** Dissend's own typed messages carry a `type` discriminator. */
+  /** Decima's own typed messages carry a `type` discriminator. */
   type?: string;
   runStoryDownload?: boolean;
   profileDownload?: boolean;

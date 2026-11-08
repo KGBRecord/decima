@@ -20,7 +20,7 @@ const supportedSites = [
   { host: "web.whatsapp.com", name: "whatsapp" },
 ];
 
-// Run the Ephemera action for a tab (triggered from the Dissend popup / side panel).
+// Run the Ephemera action for a tab (triggered from the Decima popup / side panel).
 function ephemeraRun(tab: chrome.tabs.Tab | undefined): void {
   if (!tab || tab.url === undefined) {
     if (tab && tab.id) animateIconFailed(tab.id);
@@ -198,7 +198,7 @@ async function handleMessage(
   message: EphemeraMessage,
   sender: chrome.runtime.MessageSender,
 ): Promise<void> {
-  // Ignore Dissend's own typed messages (CONTEXT_CHANGED, OPEN_SIDEPANEL, ...)
+  // Ignore Decima's own typed messages (CONTEXT_CHANGED, OPEN_SIDEPANEL, ...)
   if (message && (message.ephemeraRun || message.type)) return;
   if (message.runStoryDownload) {
     if (sender.tab && sender.tab.id) {

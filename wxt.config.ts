@@ -7,7 +7,7 @@ export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   vite: () => ({ plugins: [tailwindcss()] }),
   manifest: {
-    name: 'Dissend',
+    name: 'Decima',
     description: 'Batch-upload files to Discord (10 per message) and save stories from Instagram, Facebook and WhatsApp Web.',
     permissions: ['sidePanel', 'storage', 'activeTab', 'tabs', 'contextMenus', 'downloads', 'scripting'],
     host_permissions: [
@@ -15,7 +15,7 @@ export default defineConfig({
       '*://*.instagram.com/*', '*://*.cdninstagram.com/*',
       '*://*.facebook.com/*', '*://*.fbcdn.net/*', '*://*.whatsapp.com/*',
     ],
-    action: { default_title: 'Dissend' },
+    action: { default_title: 'Decima' },
     side_panel: { default_path: 'sidepanel.html' },
     minimum_chrome_version: '116',
   },

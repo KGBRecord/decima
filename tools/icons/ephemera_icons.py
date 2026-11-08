@@ -11,7 +11,7 @@ import argparse
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-ACCENT = "#5865f2"  # Dissend blurple
+ACCENT = "#5865f2"  # Decima blurple
 
 
 def stroke_svg(body: str, color: str = ACCENT, width: str = "2.2") -> str:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the Dissend toolbar / store icons (public/icon/*.png).
+"""Generate the Decima toolbar / store icons (public/icon/*.png).
 
 Pure standard library: no Pillow, no network. Usage:
 

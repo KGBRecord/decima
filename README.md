@@ -1,4 +1,4 @@
-# Dissend
+# Decima
 
 > One extension, two tools: batch-upload files to Discord (10 per message) and save stories from Instagram, Facebook and WhatsApp Web.
 
@@ -20,7 +20,7 @@ Pick 200 files once; the extension posts them as 20 consecutive messages while y
 
 ## Ephemera (built in)
 
-Dissend also includes a story/media downloader for **Instagram**, **Facebook** and **WhatsApp Web** — a native part of the extension, not a separate add-on.
+Decima also includes a story/media downloader for **Instagram**, **Facebook** and **WhatsApp Web** — a native part of the extension, not a separate add-on.
 
 - Download buttons are injected on Instagram and Facebook pages (stories, posts, reels, videos, albums, profile bulk download as ZIP).
 - From the toolbar popup or the side panel's **Ephemera** tab, download the story/status on the current tab.
@@ -53,7 +53,7 @@ Everything runs locally; no data is sent anywhere except to Instagram or Faceboo
 
 Code lives in `lib/ephemera/` (service worker pipeline), `entrypoints/instagram.content.ts` and `entrypoints/facebook.content.ts` (page scripts), and `entrypoints/ephemera-*.ts` (on-demand scripts).
 
-## How Dissend uploads
+## How Decima uploads
 
 ```mermaid
 sequenceDiagram

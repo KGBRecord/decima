@@ -1,4 +1,4 @@
-/** Toolbar feedback via badge (the Dissend icon is never replaced). */
+/** Toolbar feedback via badge (the Decima icon is never replaced). */
 export function flashBadge(tabId: number | undefined, text: string, color: string): void {
   if (!tabId) return;
   chrome.action.setBadgeBackgroundColor({ tabId: tabId, color: color });

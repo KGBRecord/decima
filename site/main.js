@@ -1,4 +1,4 @@
-/* Dissend landing: motion and the queue playground.
+/* Decima landing: motion and the queue playground.
    Every animation here has a job: hierarchy (word reveals, hero entry), storytelling (the upload
    rail and staggered card entry) or feedback (buttons, the playground).
    Nothing runs when the visitor prefers reduced motion; the page is complete without it. */

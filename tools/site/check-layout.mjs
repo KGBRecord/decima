@@ -18,7 +18,7 @@ const CHROME = process.env.CHROME_BIN || '/Applications/Google Chrome.app/Conten
 fs.mkdirSync(OUT, { recursive: true });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const PORT = 9800 + Math.floor(Math.random() * 150);
-const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'dissend-site-'));
+const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'decima-site-'));
 const chrome = spawn(CHROME, ['--headless=new', '--no-sandbox', '--hide-scrollbars', `--user-data-dir=${profile}`, `--remote-debugging-port=${PORT}`, 'about:blank'], { stdio: 'ignore' });
 const done = () => { try { chrome.kill('SIGKILL'); } catch {} try { fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }); } catch {} };
 process.on('exit', done);
