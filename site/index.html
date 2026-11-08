@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dissend. Send a hundred files to Discord in one go.</title>
+<meta name="description" content="Dissend is a Chrome extension that sends any number of files to the active Discord channel, ten per message, and saves stories from Instagram, Facebook and WhatsApp Web.">
+<meta property="og:title" content="Dissend">
+<meta property="og:description" content="Pick any number of files. Dissend posts them to Discord ten at a time.">
+<meta property="og:image" content="assets/shots/panel-queue.webp">
+<link rel="icon" href="assets/favicon.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top"><img src="assets/icon-128.png" alt="" width="28" height="28"><span>Dissend</span></a>
+    <nav aria-label="Primary">
+      <a href="#upload">Upload</a>
+      <a href="#ephemera">Ephemera</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/KGBRecord/dissend">GitHub</a>
+    </nav>
+    <a class="btn btn-sm" href="https://github.com/KGBRecord/dissend/releases/latest">Download</a>
+  </div>
+</header>
+
+<main id="top">
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <h1>Send two hundred files to Discord without counting to ten.</h1>
+      <p class="lede">Discord caps a message at ten attachments. Dissend splits your files into messages of ten and posts them for you.</p>
+      <div class="cta">
+        <a class="btn" href="https://github.com/KGBRecord/dissend/releases/latest">Download</a>
+        <a class="btn btn-ghost" href="#upload">See how it works</a>
+      </div>
+    </div>
+    <figure class="hero-shot" aria-label="Dissend side panel with a queue of 22 files split into three messages">
+      <img src="assets/shots/panel-queue.webp" alt="Dissend side panel: target channel release-assets, 22 files queued in 3 messages" width="400" height="780" fetchpriority="high">
+    </figure>
+  </div>
+</section>
+
+<section class="logos" aria-label="Works with">
+  <div class="wrap logos-in">
+    <span>Works on</span>
+    <ul>
+      <li><img src="assets/logos/discord.svg" alt="Discord" height="22"></li>
+      <li><img src="assets/logos/instagram.svg" alt="Instagram" height="22"></li>
+      <li><img src="assets/logos/facebook.svg" alt="Facebook" height="22"></li>
+      <li><img src="assets/logos/whatsapp.svg" alt="WhatsApp" height="22"></li>
+    </ul>
+  </div>
+</section>
+
+<section id="upload" class="upload">
+  <div class="wrap">
+    <h2>Drop them in. Dissend does the rest.</h2>
+    <p class="sub">It reads the server and channel you have open, groups your files into messages, and posts them one after another.</p>
+
+    <div class="steps">
+      <article class="step">
+        <img src="assets/shots/panel-target.webp" alt="Side panel showing the active server and channel with a Can send badge" width="400" height="780" loading="lazy">
+        <h3>It knows where you are</h3>
+        <p>Server and channel names appear before anything is sent. If you switch channels mid-run, Dissend stops.</p>
+      </article>
+      <article class="step step-b">
+        <img src="assets/shots/panel-queue.webp" alt="Queue of 22 files grouped into messages of ten" width="400" height="780" loading="lazy">
+        <h3>Files are grouped for you</h3>
+        <p>Add as many as you like. Each group of ten is shown as its own message, and oversize files are skipped before they fail.</p>
+      </article>
+      <article class="step step-c">
+        <img src="assets/shots/panel-run.webp" alt="A run in progress at ten of 22 files with Pause and Stop" width="400" height="780" loading="lazy">
+        <h3>Pause, resume or stop</h3>
+        <p>Progress, a live log and a delay between messages keep the run calm. Stop any time.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="facts">
+  <div class="wrap facts-in">
+    <div class="facts-copy">
+      <h2>It uses Discord the way you would.</h2>
+      <p>Dissend pastes your files into Discord's own message box and presses Enter. It never reads or stores your token, and it never calls private Discord endpoints.</p>
+    </div>
+    <dl class="facts-list">
+      <div><dt>Per message</dt><dd>1 to 10 files</dd></div>
+      <div><dt>Size limits</dt><dd>Free 10&nbsp;MB, Nitro Basic 50&nbsp;MB, Nitro 500&nbsp;MB</dd></div>
+      <div><dt>Caption</dt><dd>On the first or every message</dd></div>
+      <div><dt>Large files</dt><dd>Streamed in 3 MB chunks</dd></div>
+    </dl>
+  </div>
+</section>
+
+<section id="ephemera" class="ephemera">
+  <div class="wrap">
+    <h2>Ephemera keeps what disappears.</h2>
+    <p class="sub">Stories vanish after a day. Ephemera adds a round download button right on the page, on Instagram and Facebook, and saves WhatsApp Web statuses on demand.</p>
+
+    <div class="where">
+      <figure class="w-tall w-1">
+        <img src="assets/shots/ig-story.webp" alt="Instagram story with a round download button in the top-left corner" width="420" height="746" loading="lazy">
+        <figcaption><b>Instagram stories.</b> One tap on the corner button saves the story you are watching.</figcaption>
+      </figure>
+      <figure class="w-tall w-2">
+        <img src="assets/shots/ig-post.webp" alt="Instagram carousel post with a single download button and a download all button" width="420" height="668" loading="lazy">
+        <figcaption><b>Instagram posts.</b> Photos, videos and reels. On a carousel, a second button saves every slide.</figcaption>
+      </figure>
+      <figure class="w-tall w-3">
+        <img src="assets/shots/fb-story.webp" alt="Facebook story with a round download button at the bottom-right" width="420" height="746" loading="lazy">
+        <figcaption><b>Facebook stories.</b> The button sits at the bottom-right, clear of the viewer controls.</figcaption>
+      </figure>
+    </div>
+
+    <div class="where where-2">
+      <figure>
+        <img src="assets/shots/fb-feed.webp" alt="Facebook feed video with a download button on the top-left of the video" width="520" height="428" loading="lazy">
+        <figcaption><b>Facebook videos and albums.</b> Hover a video in your feed and the button appears on it.</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/shots/ig-profile.webp" alt="Instagram profile with a Download All button under the bio" width="560" height="480" loading="lazy">
+        <figcaption><b>Whole profiles.</b> A Download All button under the bio opens the range and filter dialog.</figcaption>
+      </figure>
+    </div>
+
+    <div class="eph-grid">
+      <div class="eph-copy">
+        <h3>Pick what to take</h3>
+        <ul class="eph-list">
+          <li><b>Range, top likes, top comments.</b> Choose a range of posts, or only the few with the most likes.</li>
+          <li><b>Likes, comments and date filters</b> narrow it down before anything downloads.</li>
+          <li><b>One ZIP</b> with sensible file names, saved through Chrome.</li>
+          <li><b>No account, no telemetry.</b> Everything runs in your browser.</li>
+        </ul>
+      </div>
+      <div class="eph-shots">
+        <img class="eph-a" src="assets/shots/dialog-profile.webp" alt="Dialog for downloading all posts of an Instagram profile with range and filters" width="460" height="760" loading="lazy">
+        <img class="eph-b" src="assets/shots/panel-ephemera.webp" alt="Ephemera tab with a Download from this page button" width="400" height="780" loading="lazy">
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="popup-sec">
+  <div class="wrap popup-in">
+    <img src="assets/shots/popup.webp" alt="Dissend toolbar popup showing the target channel, quick settings and a save button" width="340" height="420" loading="lazy">
+    <div>
+      <h2>The popup is the short version.</h2>
+      <p>Open it to check the target, change files per message or the delay, or save the story on the page you are looking at.</p>
+    </div>
+  </div>
+</section>
+
+<section id="install" class="install">
+  <div class="wrap install-in">
+    <h2>Install in a minute.</h2>
+    <ol class="install-steps">
+      <li><p><span>Download</span> the latest zip from the releases page and unzip it.</p></li>
+      <li><p><span>Open</span> <code>chrome://extensions</code> and switch on Developer mode.</p></li>
+      <li><p><span>Choose</span> <span class="ui">Load unpacked</span> and select the unzipped folder.</p></li>
+      <li><p><span>Reload</span> any Discord, Instagram or Facebook tab that was already open.</p></li>
+    </ol>
+    <div class="cta">
+      <a class="btn" href="https://github.com/KGBRecord/dissend/releases/latest">Download</a>
+      <a class="btn btn-ghost" href="https://github.com/KGBRecord/dissend">Source on GitHub</a>
+    </div>
+    <p class="note">Needs Chrome or another Chromium browser, version 116 or newer.</p>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <div class="sign">
+      <b>K G B &nbsp; R E C O R D</b>
+      <span>code is our music</span>
+    </div>
+    <p class="legal">Dissend is unofficial and not affiliated with Discord, Instagram, Facebook or WhatsApp. Automating an account may conflict with a service's terms. Use it responsibly. MIT licensed.</p>
+    <a href="https://github.com/KGBRecord">github.com/KGBRecord</a>
+  </div>
+</footer>
+
+<script src="main.js" defer></script>
+</body>
+</html>
