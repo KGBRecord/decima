@@ -41,3 +41,17 @@ export function useDiscord(): DiscordInfo & { refresh: () => void } {
   }, [refresh]);
   return { ...info, refresh };
 }
+
+import { activeEphemeraTab, type EphemeraTab } from './ephemera-tabs';
+
+export function useEphemeraTab(): EphemeraTab | null {
+  const [tab, setTab] = useState<EphemeraTab | null>(null);
+  const refresh = useCallback(async () => setTab(await activeEphemeraTab()), []);
+  useEffect(() => {
+    refresh();
+    const off = useTabHooks(refresh);
+    const iv = setInterval(refresh, 1500);
+    return () => { off(); clearInterval(iv); };
+  }, [refresh]);
+  return tab;
+}

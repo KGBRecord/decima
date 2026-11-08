@@ -1,10 +1,12 @@
-import { ExternalLink, PanelRight, Settings as Cog, Upload } from 'lucide-react';
-import { useDiscord, useRun, useSettings } from '@/lib/hooks';
+import { Download, ExternalLink, PanelRight, Settings as Cog, Upload } from 'lucide-react';
+import { useDiscord, useRun, useSettings, useEphemeraTab } from '@/lib/hooks';
+import { runEphemera } from '@/lib/ephemera-tabs';
 import { ContextCard } from './ContextCard';
 import { Badge, Button, Card, Field, inputCls, Progress } from './ui';
 
 export function PopupApp() {
   const info = useDiscord();
+  const ephemera = useEphemeraTab();
   const run = useRun();
   const [settings, update] = useSettings();
   const openPanel = async () => {
@@ -32,6 +34,7 @@ export function PopupApp() {
         <Field label="Per message"><input type="number" min={1} max={10} className={inputCls} value={settings.perMessage} onChange={(e) => update({ perMessage: Math.min(10, Math.max(1, Number(e.target.value) || 10)) })} /></Field>
         <Field label="Delay (s)"><input type="number" min={1} max={120} className={inputCls} value={settings.delaySec} onChange={(e) => update({ delaySec: Math.min(120, Math.max(1, Number(e.target.value) || 3)) })} /></Field>
       </Card>
+      {ephemera && <Button className="w-full" variant="success" onClick={() => { runEphemera(ephemera.tabId); window.close(); }}><Download className="h-4 w-4" />Save story from this {ephemera.platform} page</Button>}
       <Button className="w-full" onClick={openPanel}><PanelRight className="h-4 w-4" />Open uploader side panel</Button>
       {!info.onDiscord && <Button className="w-full" variant="ghost" onClick={() => chrome.tabs.create({ url: 'https://discord.com/channels/@me' })}><ExternalLink className="h-4 w-4" />Open Discord</Button>}
     </div>

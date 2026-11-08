@@ -1,24 +1,25 @@
 import { useState } from 'react';
-import { Settings as Cog, Upload, Info } from 'lucide-react';
+import { Settings as Cog, Upload, Info, Download } from 'lucide-react';
 import clsx from 'clsx';
 import { useSettings } from '@/lib/hooks';
 import { UploadPanel } from './UploadPanel';
 import { SettingsForm } from './SettingsForm';
+import { EphemeraPanel } from './EphemeraPanel';
 import { Card } from './ui';
 
-type Tab = 'upload' | 'settings' | 'about';
+type Tab = 'upload' | 'ephemera' | 'settings' | 'about';
 
 export function SidePanelApp() {
   const [tab, setTab] = useState<Tab>('upload');
   const [settings, update] = useSettings();
   const tabs: { id: Tab; label: string; icon: typeof Upload }[] = [
-    { id: 'upload', label: 'Upload', icon: Upload }, { id: 'settings', label: 'Settings', icon: Cog }, { id: 'about', label: 'About', icon: Info },
+    { id: 'upload', label: 'Upload', icon: Upload }, { id: 'ephemera', label: 'Ephemera', icon: Download }, { id: 'settings', label: 'Settings', icon: Cog }, { id: 'about', label: 'About', icon: Info },
   ];
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center gap-2 border-b border-ink-900 bg-ink-800 px-3 py-2.5">
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blurple text-white"><Upload className="h-4 w-4" /></div>
-        <div><div className="font-bold leading-tight text-white">Dissend</div><div className="text-[11px] leading-tight text-zinc-400">Send files to Discord, 10 per message</div></div>
+        <div><div className="font-bold leading-tight text-white">Dissend</div><div className="text-[11px] leading-tight text-zinc-400">Discord uploads · Ephemera</div></div>
       </header>
       <nav className="flex border-b border-ink-900 bg-ink-800">
         {tabs.map((t) => (
@@ -30,6 +31,7 @@ export function SidePanelApp() {
       </nav>
       <main className="flex-1 overflow-auto p-3">
         {tab === 'upload' && <UploadPanel settings={settings} />}
+        {tab === 'ephemera' && <EphemeraPanel />}
         {tab === 'settings' && <Card><SettingsForm settings={settings} update={update} /></Card>}
         {tab === 'about' && (
           <div className="space-y-3">
@@ -41,7 +43,7 @@ export function SidePanelApp() {
                   <div className="text-[11px] text-zinc-400">Version {chrome.runtime.getManifest().version}</div>
                 </div>
               </div>
-              <p>Batch-upload files to Discord, up to 10 per message.</p>
+              <p>Batch-upload files to Discord (up to 10 per message) and save stories from Instagram, Facebook and WhatsApp Web.</p>
             </Card>
             <Card className="space-y-1.5 text-zinc-300">
               <div className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Author</div>
@@ -57,7 +59,17 @@ export function SidePanelApp() {
               <p>The extension detects the active Discord server and channel, splits your files into groups of up to 10, and posts each group as one message using Discord's own composer (paste, then Enter).</p>
               <p>Files travel from the side panel to the Discord tab in 3 MB chunks. Keep the panel open until the run finishes; switching channels mid-run aborts for safety.</p>
             </Card>
-            <div className="pb-2 text-center text-[11px] text-zinc-500">Unofficial. Not affiliated with Discord. © 2026 KGB Record · MIT</div>
+            <Card className="space-y-2 text-zinc-300">
+              <div className="font-semibold text-white">How Ephemera saves stories</div>
+              <ol className="list-decimal space-y-1.5 pl-4">
+                <li><b className="text-white">Detect:</b> content scripts on Instagram and Facebook watch the page and add download buttons to stories, posts, reels, videos and albums. WhatsApp Web statuses are handled on demand.</li>
+                <li><b className="text-white">Find the media:</b> on Instagram it calls the web API with your own logged-in session to get the original story and post files; for story videos it reads the player's React state. On Facebook it collects video URLs from the page, network performance entries and GraphQL responses.</li>
+                <li><b className="text-white">Trigger:</b> use the page buttons, the popup, or the Stories tab. The extension then injects the matching script into the current tab only when you ask.</li>
+                <li><b className="text-white">Download:</b> the background worker saves files with Chrome's downloads API, named by username and post, falling back to fetch, blob and data URL when a direct link is refused. Profile bulk downloads are packed into a ZIP.</li>
+              </ol>
+              <p className="text-[11px] text-zinc-500">Everything runs locally in your browser. Nothing is sent to any server other than Instagram or Facebook themselves.</p>
+            </Card>
+            <div className="pb-2 text-center text-[11px] text-zinc-500">Unofficial. Not affiliated with Discord, Instagram, Facebook or WhatsApp. © 2026 KGB Record · MIT</div>
           </div>
         )}
       </main>
