@@ -122,7 +122,7 @@ export function showFilterPopup(buttonElement: HTMLElement, username: string, to
 .eph-blue{color:#2563eb;}
 .eph-pink{color:#db2777;}
 .eph-range{display:flex;align-items:center;gap:14px;}
-.eph-num{flex:1;border:1px solid #d1d5db;border-radius:10px;padding:12px 14px;font-size:16px;text-align:center;background:#fff;color:#111827;outline:none;}
+.eph-num{flex:1;min-width:0;width:100%;border:1px solid #d1d5db;border-radius:10px;padding:12px 14px;font-size:16px;text-align:center;background:#fff;color:#111827;outline:none;}
 .eph-num:focus{border-color:#2563eb;}
 .eph-to-lbl{color:#6b7280;font-size:14px;}
 .eph-hint{font-size:12px;color:#9ca3af;margin-top:8px;}
@@ -133,13 +133,16 @@ export function showFilterPopup(buttonElement: HTMLElement, username: string, to
 .eph-chk-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
 .eph-pink-bg{background:#fce7f0;}
 .eph-purple-bg{background:#ede9fe;}
-.eph-spin{width:78px;border:1px solid #d1d5db;border-radius:8px;padding:9px 10px;font-size:15px;text-align:center;background:#fff;color:#111827;outline:none;}
+.eph-spin{width:78px;flex:0 0 78px;border:1px solid #d1d5db;border-radius:8px;padding:9px 10px;font-size:15px;text-align:center;background:#fff;color:#111827;outline:none;}
 .eph-spin:focus{border-color:#db2777;}
 .eph-filter-row{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;margin-bottom:10px;}
 .eph-f-icon{width:26px;height:26px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
 .eph-f-label{font-size:14px;color:#374151;width:120px;flex:0 0 auto;}
 .eph-finput{flex:1;min-width:0;border:1px solid #e5e7eb;border-radius:8px;padding:9px 10px;font-size:13px;background:#fff;color:#111827;outline:none;}
 .eph-finput:focus{border-color:#2563eb;}
+.eph-filter-row:has(.eph-date-from){flex-wrap:wrap;row-gap:8px;}
+.eph-filter-row:has(.eph-date-from) .eph-f-label{flex:0 0 calc(100% - 36px);}
+.eph-filter-row:has(.eph-date-from) .eph-finput{min-width:130px;}
 .eph-foot{display:flex;gap:12px;padding:8px 20px 18px;}
 .eph-cancel,.eph-download{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;border:none;}
 .eph-cancel{background:#fff;color:#374151;border:1px solid #e5e7eb;}
