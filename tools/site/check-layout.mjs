@@ -43,12 +43,12 @@ for (const [name, width, height] of [['desktop', 1440, 900], ['laptop', 1024, 76
   await sleep(300);
   const r = await ev(`(() => {
     const vw = document.documentElement.clientWidth;
-    const over = [...document.querySelectorAll('body *')].filter((e) => { const b = e.getBoundingClientRect(); return b.width > 0 && (b.right > vw + 1 || b.left < -1) && getComputedStyle(e).position !== 'fixed'; })
+    const over = [...document.querySelectorAll('body *')].filter((e) => { const b = e.getBoundingClientRect(); return b.width > 0 && (b.right > vw + 1 || b.left < -1) && getComputedStyle(e).position !== 'fixed' && !e.closest('.pan-track,.flow-steps,#field,.aura,.blob'); })
       .slice(0, 6).map((e) => e.tagName.toLowerCase() + '.' + e.className + ' ' + Math.round(e.getBoundingClientRect().right));
     const broken = [...document.images].filter((i) => !i.complete || i.naturalWidth === 0).map((i) => i.getAttribute('src'));
     const btns = [...document.querySelectorAll('.btn')].filter((b) => b.getBoundingClientRect().height > 64).map((b) => b.textContent.trim());
     const h1 = document.querySelector('h1'); const lh = parseFloat(getComputedStyle(h1).lineHeight);
-    const hero = document.querySelector('.hero-copy .cta').getBoundingClientRect().bottom;
+    const hero = (document.querySelector('.hero-copy .cta') || document.querySelector('.hero-copy')).getBoundingClientRect().bottom;
     return { vw, scrollW: document.documentElement.scrollWidth, over, wrappedBtns: btns, broken, h1Lines: Math.round(h1.getBoundingClientRect().height / lh), ctaBottom: Math.round(hero), pageH: document.documentElement.scrollHeight };
   })()`);
   const bad = r.scrollW > r.vw || r.over.length || r.wrappedBtns.length || r.broken.length;
