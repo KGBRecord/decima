@@ -46,7 +46,9 @@ const sample = [
 });
 
 // ---------- tab plumbing stub, injected before the page scripts ----------
+const COVERS = ['p1.jpg', 'p2.jpg', 'p3.jpg', 'l1.jpg'].map((f) => 'data:image/jpeg;base64,' + fs.readFileSync(path.join(ROOT, 'tools', 'site', 'photos', f)).toString('base64'));
 const stub = (scenario) => `(() => {
+  const __COVERS__ = ${JSON.stringify(COVERS)};
   const SC = ${JSON.stringify(scenario)};
   const tab = SC === 'ig'
     ? { id: 7, url: 'https://www.instagram.com/stories/slowroutes/', title: 'Stories \u2022 Instagram' }
@@ -57,7 +59,7 @@ const stub = (scenario) => `(() => {
     channelName: 'release-assets', isDM: false, canSend: true };
   const put = (o, k, v) => { try { o[k] = v; } catch (e) {} if (o[k] !== v) { try { Object.defineProperty(o, k, { value: v, configurable: true }); } catch (e) {} } };
   put(chrome.tabs, 'query', async () => [tab]);
-  put(chrome.tabs, 'sendMessage', async (_id, m) => (m && m.type === 'GET_CONTEXT' ? ctx : m && m.type === 'EPH_PROFILE_INFO' ? { ok: true, username: 'slowroutes', totalPosts: 128, highlights: 7 } : undefined));
+  put(chrome.tabs, 'sendMessage', async (_id, m) => (m && m.type === 'GET_CONTEXT' ? ctx : m && m.type === 'EPH_PROFILE_INFO' ? { ok: true, username: 'slowroutes', totalPosts: 128, highlights: [ { id: 'h1', title: 'Coast', cover: __COVERS__[0] }, { id: 'h2', title: 'Night trains', cover: __COVERS__[1] }, { id: 'h3', title: 'Film', cover: __COVERS__[2] }, { id: 'h4', title: 'Markets', cover: __COVERS__[3] } ] } : undefined));
   put(chrome.tabs, 'connect', () => {
     const ls = []; let bid = '';
     return {
@@ -200,7 +202,8 @@ try {
   await c.ev(`(() => { const set = (el, v) => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, String(v)); el.dispatchEvent(new Event('input', { bubbles: true })); };
     set(document.querySelector('input[aria-label="First post"]'), 1); set(document.querySelector('input[aria-label="Last post"]'), 40);
     const box = (name) => [...document.querySelectorAll('label')].find((l) => l.textContent.trim().startsWith(name)).querySelector('input[type=checkbox]');
-    box('Highlights').click(); box('Profile picture').click(); box('Most liked').click(); })()`);
+    box('Highlights').click(); box('Profile picture').click(); box('Most liked').click();
+    document.querySelectorAll('ul li label input')[3].click(); })()`);
   await sleep(500);
   // fit the frame to the content: bottom of the last block in <main>, plus the panel's own padding
   const hgt = await c.ev(`(() => { const m = document.querySelector('main'); const last = [...m.querySelectorAll('.space-y-3 > *')].pop(); return Math.ceil(last.getBoundingClientRect().bottom + 16); })()`);

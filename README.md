@@ -23,7 +23,7 @@ Pick 200 files once; the extension posts them as 20 consecutive messages while y
 Decima also includes a story/media downloader for **Instagram**, **Facebook** and **WhatsApp Web** — a native part of the extension, not a separate add-on.
 
 - Download buttons are injected on Instagram and Facebook pages (stories, posts, reels, videos, albums).
-- **Whole Instagram profiles** download as one ZIP from the side panel: open a profile, open the Ephemera tab, and tick what you want. **Posts** (with a range, the most liked or most commented, and likes, comments or date filters), **Highlights** (every reel, one folder each, all items) and the **profile picture** at full size.
+- **Whole Instagram profiles** download as one ZIP from the side panel: open a profile, open the Ephemera tab, and tick what you want. **Posts** (with a range, the most liked or most commented, and likes, comments or date filters), **Highlights** (pick which ones, one folder each, all items) and the **profile picture** at full size.
 - From the toolbar popup or the side panel's **Ephemera** tab, download the story/status on the current tab.
 - Files are saved with Chrome's downloads API. Everything runs locally, with no telemetry.
 
