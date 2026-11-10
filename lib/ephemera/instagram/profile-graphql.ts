@@ -1,5 +1,6 @@
 import type { LooseJson } from './types';
 import type { AvatarPayload, HighlightItem, HighlightPayload } from '@/lib/ephemera/types';
+import type { HighlightSummary } from '@/lib/ephemera/profile-protocol';
 import { getIGDtsg } from './dtsg';
 import { getBestImageUrl } from './story-fetch';
 
@@ -116,8 +117,8 @@ export interface ProfileSummary {
   userId: string | null;
   /** null when Instagram would not say */
   totalPosts: number | null;
-  /** number of highlight reels; null when unknown */
-  highlightCount: number | null;
+  /** the profile's highlights; null when unknown */
+  highlights: HighlightSummary[] | null;
   /** full-size profile picture, when Instagram exposes one */
   avatarUrl: string | null;
   /** first page, so the caller does not have to ask twice */
@@ -130,7 +131,7 @@ export async function fetchProfileSummary(username: string): Promise<ProfileSumm
   const userId: string | null = first?.user?.pk ?? first?.owner?.id ?? null;
   let totalPosts: number | null = firstPage.posts.length === 0 ? 0 : null;
   let avatarUrl: string | null = null;
-  let highlightCount: number | null = null;
+  let highlights: HighlightSummary[] | null = null;
   if (userId) {
     try {
       const json = await gql(PROFILE, { enable_integrity_filters: true, id: userId, ...PROFILE_FLAGS });
@@ -141,21 +142,21 @@ export async function fetchProfileSummary(username: string): Promise<ProfileSumm
       /* the count and the picture are nice to have; posts do not need them */
     }
     try {
-      highlightCount = (await fetchHighlightTray(userId)).length;
+      highlights = await fetchHighlightTray(userId);
     } catch {
       /* same */
     }
   }
-  return { userId, totalPosts, highlightCount, avatarUrl, firstPage };
+  return { userId, totalPosts, highlights, avatarUrl, firstPage };
 }
 
 /** The profile's highlight reels, newest first, without their items. */
-export async function fetchHighlightTray(userId: string): Promise<{ id: string; title: string }[]> {
+export async function fetchHighlightTray(userId: string): Promise<HighlightSummary[]> {
   const json = await gql(HIGHLIGHTS_TRAY, { user_id: userId });
   const edges: LooseJson[] = json?.data?.highlights?.edges;
   if (!Array.isArray(edges)) throw explainGraphqlFailure(json);
   return edges
-    .map((e) => ({ id: String(e?.node?.id ?? ''), title: String(e?.node?.title ?? '') }))
+    .map((e) => ({ id: String(e?.node?.id ?? ''), title: String(e?.node?.title ?? ''), cover: (e?.node?.cover_media?.cropped_image_version?.url as string | undefined) ?? null }))
     .filter((h) => h.id !== '');
 }
 

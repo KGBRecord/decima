@@ -26,7 +26,7 @@ export function registerProfileBridge(): void {
         return false;
       }
       fetchProfileSummary(username)
-        .then((s) => sendResponse({ ok: true, username, totalPosts: s.totalPosts, highlights: s.highlightCount } satisfies ProfileInfo))
+        .then((s) => sendResponse({ ok: true, username, totalPosts: s.totalPosts, highlights: s.highlights } satisfies ProfileInfo))
         .catch((e: unknown) => sendResponse({ ok: false, error: e instanceof Error ? e.message : 'Could not read this profile.' } satisfies ProfileInfo));
       return true;
     }

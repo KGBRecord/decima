@@ -14,6 +14,16 @@ export interface ProfileInclude {
   posts: boolean;
   highlights: boolean;
   avatar: boolean;
+  /** which highlights; null means all of them. Only read when `highlights` is true. */
+  highlightIds: string[] | null;
+}
+
+/** One highlight as the picker shows it. */
+export interface HighlightSummary {
+  id: string;
+  title: string;
+  /** small cover image, or null when Instagram gave none */
+  cover: string | null;
 }
 
 /** Panel -> page. */
@@ -26,8 +36,8 @@ export interface ProfileInfo {
   ok: boolean;
   username?: string;
   totalPosts?: number | null;
-  /** number of highlight reels, null when Instagram would not say */
-  highlights?: number | null;
+  /** the profile's highlights, newest first; null when Instagram would not say */
+  highlights?: HighlightSummary[] | null;
   error?: string;
 }
 

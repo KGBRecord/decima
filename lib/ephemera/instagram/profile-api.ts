@@ -361,7 +361,7 @@ export async function fetchProfilePostsViaAPI(filtersIn: ProfileFilters, include
         if (!avatarUrl) throw new Error("Instagram did not give out this profile picture.");
       }
       if (include.highlights && summary.userId) {
-        highlights = await collectHighlights(summary.userId);
+        highlights = await collectHighlights(summary.userId, include.highlightIds);
       }
     }
 
@@ -377,9 +377,11 @@ export async function fetchProfilePostsViaAPI(filtersIn: ProfileFilters, include
   }
 }
 
-/** Every highlight with its items, one request per reel. A reel that fails is skipped, not fatal. */
-async function collectHighlights(userId: string): Promise<HighlightPayload[]> {
-  const tray = await fetchHighlightTray(userId);
+/** The chosen highlights (all when `only` is null) with their items, one request per reel. A reel that fails is skipped, not fatal. */
+async function collectHighlights(userId: string, only: string[] | null): Promise<HighlightPayload[]> {
+  const all = await fetchHighlightTray(userId);
+  const tray = only ? all.filter((h) => only.includes(h.id)) : all;
+  if (only && tray.length === 0) throw new Error("None of the highlights you picked exist any more. Reload the profile and pick again.");
   const out: HighlightPayload[] = [];
   for (const [i, reel] of tray.entries()) {
     reportProgress(68 + (i / Math.max(tray.length, 1)) * 12, `Reading highlight ${i + 1} of ${tray.length}`);

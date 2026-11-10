@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CalendarRange, CircleCheck, CircleUserRound, Download, Heart, Images, Layers, ListFilter, Loader2, MessageCircle, RotateCcw, ShieldCheck, TriangleAlert, GalleryHorizontalEnd } from 'lucide-react';
 import clsx from 'clsx';
-import type { ProfileFilterInput, ProfileInfo, ProfileProgress, ProfileStartResult } from '@/lib/ephemera/profile-protocol';
+import type { HighlightSummary, ProfileFilterInput, ProfileInfo, ProfileProgress, ProfileStartResult } from '@/lib/ephemera/profile-protocol';
 import { Button, Card, Progress, inputCls } from './ui';
 
 /** inputCls carries w-full, which beats a width class; the small count boxes need their own width. */
@@ -33,7 +33,8 @@ function Pair({ children }: { children: React.ReactNode }) {
 export function ProfileDownload({ tabId, username }: { tabId: number; username: string }) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [total, setTotal] = useState<number | null>(null);
-  const [highlightCount, setHighlightCount] = useState<number | null>(null);
+  const [highlightList, setHighlightList] = useState<HighlightSummary[] | null>(null);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
   const [wantPosts, setWantPosts] = useState(true);
   const [wantHighlights, setWantHighlights] = useState(false);
   const [wantAvatar, setWantAvatar] = useState(false);
@@ -64,7 +65,8 @@ export function ProfileDownload({ tabId, username }: { tabId: number; username: 
       const info = (await chrome.tabs.sendMessage(tabId, { type: 'EPH_PROFILE_INFO' })) as ProfileInfo | undefined;
       if (!info?.ok) throw new Error(info?.error || 'The page did not answer.');
       setTotal(info.totalPosts ?? null);
-      setHighlightCount(info.highlights ?? null);
+      setHighlightList(info.highlights ?? null);
+      setPicked(new Set((info.highlights ?? []).map((h) => h.id)));
       setPhase('ready');
     } catch (e) {
       setMessage(e instanceof Error && /Receiving end/.test(e.message) ? 'The Instagram tab has not loaded Ephemera yet. Reload the tab and try again.' : e instanceof Error ? e.message : 'Could not read this profile.');
@@ -99,8 +101,13 @@ export function ProfileDownload({ tabId, username }: { tabId: number; username: 
   const narrowed = [likesMin, likesMax, cmtMin, cmtMax, dateFrom, dateTo].some((v) => v.trim() !== '') || (topLike && topCmt);
   const count = topOnly !== null ? Math.min(topOnly, inRange) : inRange;
   const upTo = narrowed || topOnly !== null;
-  const nothing = !wantPosts && !wantHighlights && !wantAvatar;
-  const extras = [wantHighlights && 'highlights', wantAvatar && (wantPosts || wantHighlights ? 'picture' : 'profile picture')].filter(Boolean) as string[];
+  const total_hl = highlightList?.length ?? 0;
+  const pickedCount = highlightList ? [...picked].filter((id) => highlightList.some((h) => h.id === id)).length : 0;
+  const allPicked = highlightList !== null && pickedCount === total_hl;
+  const hlOn = wantHighlights && (highlightList === null || pickedCount > 0);
+  const nothing = !wantPosts && !hlOn && !wantAvatar;
+  const hlWord = hlOn ? (highlightList && !allPicked ? `${pickedCount} highlight${pickedCount === 1 ? '' : 's'}` : 'highlights') : null;
+  const extras = [hlWord, wantAvatar && (wantPosts || hlOn ? 'picture' : 'profile picture')].filter(Boolean) as string[];
   const label = wantPosts
     ? `Download ${upTo ? 'up to ' : ''}${count} post${count === 1 ? '' : 's'}${extras.length ? ` + ${extras.join(' + ')}` : ''}`
     : extras.length ? `Download ${extras.join(' + ')}` : 'Choose what to download';
@@ -115,7 +122,7 @@ export function ProfileDownload({ tabId, username }: { tabId: number; username: 
     };
     setPhase('running'); setPercent(0); setMessage('Starting');
     try {
-      const res = (await chrome.tabs.sendMessage(tab.current, { type: 'EPH_PROFILE_START', filters, include: { posts: wantPosts, highlights: wantHighlights, avatar: wantAvatar } })) as ProfileStartResult | undefined;
+      const res = (await chrome.tabs.sendMessage(tab.current, { type: 'EPH_PROFILE_START', filters, include: { posts: wantPosts, highlights: wantHighlights && pickedCount > 0, avatar: wantAvatar, highlightIds: allPicked ? null : [...picked] } })) as ProfileStartResult | undefined;
       if (!res?.ok) { setMessage(res?.error || 'The page refused to start.'); setPhase('error'); }
     } catch {
       setMessage('Lost contact with the Instagram tab. Reload it and try again.'); setPhase('error');
@@ -128,7 +135,7 @@ export function ProfileDownload({ tabId, username }: { tabId: number; username: 
     <Card className="space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Download all posts</div>
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Download from profile</div>
           <div className="mt-1 truncate font-semibold text-white">@{username}</div>
         </div>
         <div className="shrink-0 text-right">
@@ -146,7 +153,30 @@ export function ProfileDownload({ tabId, username }: { tabId: number; username: 
           <Section icon={Images} title="What to download">
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-zinc-300"><input type="checkbox" className="eph-chk" checked={wantPosts} onChange={(e) => setWantPosts(e.target.checked)} /><GalleryHorizontalEnd className="h-3.5 w-3.5 shrink-0 text-zinc-400" /><span className="flex-1">Posts</span><span className="text-[11px] text-zinc-500">{total ?? '?'}</span></label>
-              <label className="flex items-center gap-2 text-zinc-300"><input type="checkbox" className="eph-chk" checked={wantHighlights} onChange={(e) => setWantHighlights(e.target.checked)} /><Layers className="h-3.5 w-3.5 shrink-0 text-zinc-400" /><span className="flex-1">Highlights</span><span className="text-[11px] text-zinc-500">{highlightCount === null ? '?' : highlightCount === 0 ? 'none' : `${highlightCount} ${highlightCount === 1 ? 'reel' : 'reels'}, all items`}</span></label>
+              <label className="flex items-center gap-2 text-zinc-300"><input type="checkbox" className="eph-chk" checked={wantHighlights} onChange={(e) => setWantHighlights(e.target.checked)} /><Layers className="h-3.5 w-3.5 shrink-0 text-zinc-400" /><span className="flex-1">Highlights</span><span className="text-[11px] text-zinc-500">{highlightList === null ? '?' : total_hl === 0 ? 'none' : wantHighlights ? `${pickedCount} of ${total_hl}` : `${total_hl} ${total_hl === 1 ? 'reel' : 'reels'}`}</span></label>
+              {wantHighlights && highlightList && total_hl > 0 && (
+                <div className="ml-6 space-y-1.5 rounded-md border border-ink-600 bg-ink-900/60 p-2">
+                  <div className="flex items-center justify-between text-[11px] text-zinc-500">
+                    <span>Pick the ones to download</span>
+                    <span className="flex gap-2">
+                      <button type="button" className="cursor-pointer text-acc hover:underline disabled:cursor-default disabled:text-zinc-600 disabled:no-underline" disabled={allPicked} onClick={() => setPicked(new Set(highlightList.map((h) => h.id)))}>All</button>
+                      <span aria-hidden className="text-zinc-700">|</span><button type="button" className="cursor-pointer text-acc hover:underline disabled:cursor-default disabled:text-zinc-600 disabled:no-underline" disabled={pickedCount === 0} onClick={() => setPicked(new Set())}>None</button>
+                    </span>
+                  </div>
+                  <ul className="max-h-56 space-y-1 overflow-y-auto pr-1">
+                    {highlightList.map((h) => (
+                      <li key={h.id}>
+                        <label className={clsx('flex cursor-pointer items-center gap-2 rounded-md px-1 py-1 hover:bg-ink-800', picked.has(h.id) ? 'text-white' : 'text-zinc-400 hover:text-white [&_img]:opacity-65 hover:[&_img]:opacity-100')}>
+                          <input type="checkbox" className="eph-chk" checked={picked.has(h.id)} onChange={(e) => setPicked((prev) => { const n = new Set(prev); if (e.target.checked) n.add(h.id); else n.delete(h.id); return n; })} />
+                          {h.cover ? <img src={h.cover} alt="" width={28} height={28} loading="lazy" className="h-7 w-7 shrink-0 rounded-full border border-ink-600 object-cover" /> : <span className="h-7 w-7 shrink-0 rounded-full border border-ink-600 bg-ink-800" />}
+                          <span className="min-w-0 flex-1 truncate" title={h.title || 'Untitled'}>{h.title || 'Untitled'}</span>
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                  {pickedCount === 0 && <div className="text-[11px] text-warn">Pick at least one, or untick Highlights.</div>}
+                </div>
+              )}
               <label className="flex items-center gap-2 text-zinc-300"><input type="checkbox" className="eph-chk" checked={wantAvatar} onChange={(e) => setWantAvatar(e.target.checked)} /><CircleUserRound className="h-3.5 w-3.5 shrink-0 text-zinc-400" /><span className="flex-1">Profile picture</span><span className="text-[11px] text-zinc-500">full size</span></label>
             </div>
           </Section>
