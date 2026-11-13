@@ -1,6 +1,6 @@
 import type { DlButton } from './types';
 import { setOnClick } from './dom';
-import { clickbuttondow, ephIsWindowsClient } from './buttons';
+import { clickbuttondow, ephNeedsFloatingVideoButton } from './buttons';
 import { findIgShortcodeInRoot, parseIgShortcodeFromHref } from './shortcode';
 
 export function isIgProfileGridPage() {
@@ -319,7 +319,7 @@ export function isIgButtonAttachedToMedia(btn: HTMLElement): boolean {
       return true;
     if (
       btn.getAttribute("data-ig-windows-floating") === "1" &&
-      ephIsWindowsClient()
+      ephNeedsFloatingVideoButton()
     )
       return true;
     if (isIgLogoZoneDownloadButton(btn)) return false;

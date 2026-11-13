@@ -91,6 +91,19 @@ export function ephIsWindowsClient(): boolean {
   }
 }
 
+/** True on the full-screen reels viewer (/reel/<code>/ and /reels/<code>/), where every video shares one URL. */
+export function isIgReelsViewer(): boolean {
+  return /^\/reels?\/[^/]+/.test(location.pathname);
+}
+
+/**
+ * The in-video button cannot be clicked where Instagram lays a transparent overlay over the player
+ * (the reels viewer, and Windows clients). There the button floats above the page instead.
+ */
+export function ephNeedsFloatingVideoButton(): boolean {
+  return ephIsWindowsClient() || isIgReelsViewer();
+}
+
 export function clickbuttondow1(this: HTMLElement, e?: Event | null): void {
   if (e) {
     try {

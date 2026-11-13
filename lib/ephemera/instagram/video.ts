@@ -1,6 +1,6 @@
 import type { DlButton, IgImageCandidate, IgMediaInfoResponse, IgMediaItem, IgVideoVersion } from './types';
 import { setOnClick } from './dom';
-import { markDownloadButtonBusy, restoreDownloadButton, ephIsWindowsClient } from './buttons';
+import { markDownloadButtonBusy, restoreDownloadButton, ephIsWindowsClient, ephNeedsFloatingVideoButton, isIgReelsViewer } from './buttons';
 import { codetopk, getDirectIgVideoUrlNearButton, getIgCarouselIndexNearButton, getIgChannelNear, getShortcodeNear, getVisibleIgVideoNearButton, parseIgShortcodeFromHref } from './shortcode';
 import { buildIgFileBase, findVideoUrlDeep } from './story-fetch';
 
@@ -194,12 +194,88 @@ export function clickVideoDownload(this: HTMLElement, e?: Event | null): void {
     } catch (_) {}
   }
   markDownloadButtonBusy(this);
+  if (isIgReelsViewer()) {
+    // every reel in the viewer shares one page: take the code from the URL and the video from the screen now
+    var current = parseIgShortcodeFromHref(location.href);
+    if (current) this.setAttribute("data-ig-shortcode", current);
+    var shown = pickMostVisibleVideo();
+    if (shown) (this as DlButton).__ephVideoElement = shown;
+  }
   downloadIgVideoSmart(this);
+}
+
+/** The video taking up most of the screen, or null when none is on screen. */
+export function pickMostVisibleVideo(): HTMLVideoElement | null {
+  var best: HTMLVideoElement | null = null;
+  var bestPx = 80;
+  var vids = document.querySelectorAll("video");
+  for (var i = 0; i < vids.length; i++) {
+    var r = vids[i].getBoundingClientRect();
+    if (r.width < 120) continue;
+    var px = Math.min(r.bottom, innerHeight) - Math.max(r.top, 0);
+    if (px > bestPx && r.right > 0 && r.left < innerWidth) {
+      bestPx = px;
+      best = vids[i];
+    }
+  }
+  return best;
+}
+
+function floatingVideoButton(): HTMLElement | null {
+  return document.querySelector<HTMLElement>('.eph_toolkit_dl_btn[data-ig-windows-floating="1"]');
+}
+
+/** Reels viewer: one floating button that follows the reel on screen and always names the reel in the URL. */
+export function placeReelsViewerButton(): void {
+  var btn = floatingVideoButton();
+  var video = pickMostVisibleVideo();
+  if (!video) {
+    if (btn) btn.style.display = "none";
+    return;
+  }
+  var rect = video.getBoundingClientRect();
+  if (!btn) {
+    btn = document.createElement("div");
+    btn.className = "eph_toolkit_dl_btn";
+    btn.setAttribute("data-ig-windows-floating", "1");
+    btn.innerHTML =
+      '<span class="eph_toolkit_dl_pregress_loader"></span><span class="eph_toolkit_icon"></span>';
+    document.body.appendChild(btn);
+  }
+  var code = parseIgShortcodeFromHref(location.href);
+  if (code) btn.setAttribute("data-ig-shortcode", code);
+  (btn as DlButton).__ephVideoElement = video;
+  btn.onclick = null;
+  btn.style.position = "fixed";
+  btn.style.left = Math.max(8, rect.left + 12) + "px";
+  btn.style.top = Math.max(8, rect.top + 12) + "px";
+  btn.style.display = "flex";
+  btn.style.opacity = "0.88";
+  btn.style.zIndex = "2147483647";
+  btn.style.pointerEvents = "auto";
+  prepareWindowsIgDownloadButton(btn as DlButton, video);
+}
+
+/** Keep the reels button on the reel being scrolled to, without waiting for the 2 second scan. */
+export function watchReelsViewer(): void {
+  var queued = false;
+  var run = function () {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(function () {
+      queued = false;
+      try {
+        if (isIgReelsViewer()) placeReelsViewerButton();
+      } catch (e) {}
+    });
+  };
+  document.addEventListener("scroll", run, { capture: true, passive: true });
+  window.addEventListener("resize", run, { passive: true });
 }
 
 export function prepareWindowsIgDownloadButton(btn: DlButton, video: HTMLVideoElement): void {
   try {
-    if (!ephIsWindowsClient() || !btn || btn.__ephWindowsPrepared) return;
+    if (!ephNeedsFloatingVideoButton() || !btn || btn.__ephWindowsPrepared) return;
     btn.__ephWindowsPrepared = true;
     btn.style.zIndex = "2147483647";
     btn.style.pointerEvents = "auto";
@@ -245,7 +321,7 @@ export function prepareWindowsIgDownloadButton(btn: DlButton, video: HTMLVideoEl
 
 export function ensureWindowsFloatingVideoDownloadButton(video: HTMLVideoElement): boolean {
   try {
-    if (!ephIsWindowsClient()) return false;
+    if (!ephIsWindowsClient() || isIgReelsViewer()) return false;
     if (location.pathname.indexOf("/stories/") !== -1) return false;
     if (
       !video ||
@@ -297,6 +373,17 @@ export function ensureWindowsFloatingVideoDownloadButton(video: HTMLVideoElement
 export function addVideoDownloadButton() {
   try {
     if (location.pathname.indexOf("/stories/") !== -1) return; // story có nút riêng
+    if (isIgReelsViewer()) {
+      document.querySelectorAll(".eph_toolkit_dl_btn:not([data-ig-windows-floating])").forEach(function (el) {
+        if (el.querySelector(".eph_toolkit_dl_pregress_loader")) el.remove();
+      });
+      placeReelsViewerButton();
+      return;
+    }
+    if (!ephIsWindowsClient()) {
+      var stray = floatingVideoButton();
+      if (stray) stray.remove();
+    }
     var vids = document.querySelectorAll("video");
     for (var i = 0; i < vids.length; i++) {
       var v = vids[i];

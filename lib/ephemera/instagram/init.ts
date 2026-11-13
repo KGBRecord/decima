@@ -4,7 +4,7 @@ import { registerListeners } from './listeners';
 import { startObserver } from './observer';
 import { registerProfileBridge } from './profile-bridge';
 import { addbutton, addExploreDownloadButtons, addSingleImageDownloadButtons, cleanupIgDownloadButtons } from './grid';
-import { addVideoDownloadButton } from './video';
+import { addVideoDownloadButton, watchReelsViewer } from './video';
 
 export function initInstagram(): void {
   state.tokendsg = getIGDtsg();
@@ -16,6 +16,7 @@ export function initInstagram(): void {
   registerListeners();
   registerProfileBridge();
   startObserver();
+  watchReelsViewer();
 
   // Initialize
   addbutton();
