@@ -1,15 +1,16 @@
 import { useMemo, useRef, useState, type DragEvent } from 'react';
-import { FileUp, Pause, Play, Send, Square, Trash2, X, File as FileIcon } from 'lucide-react';
+import { FileUp, FolderPlus, Pause, Play, Send, Square, Trash2, X, File as FileIcon } from 'lucide-react';
 import clsx from 'clsx';
 import { chunk, formatBytes } from '@/lib/format';
 import { runUpload, type RunControl } from '@/lib/uploader';
 import { runItem } from '@/lib/storage';
+import { scanDataTransfer, scanDirectoryInput, type ScannedFile } from '@/lib/scan';
 import { IDLE_RUN, type Settings } from '@/lib/types';
 import { useDiscord, useRun } from '@/lib/hooks';
 import { Badge, Button, Card, Progress } from './ui';
 import { ContextCard } from './ContextCard';
 
-interface Entry { id: string; file: File; oversize: boolean }
+interface Entry { id: string; file: File; path: string; oversize: boolean }
 type BatchStatus = 'pending' | 'sending' | 'done' | 'failed';
 interface LogLine { t: number; text: string; level: 'info' | 'ok' | 'err' }
 
@@ -22,13 +23,26 @@ export function UploadPanel({ settings }: { settings: Settings }) {
   const [batchStatus, setBatchStatus] = useState<Record<number, BatchStatus>>({});
   const control = useRef<RunControl>({ stopped: false, paused: false });
   const inputRef = useRef<HTMLInputElement>(null);
+  const dirRef = useRef<HTMLInputElement>(null);
+  const [scanning, setScanning] = useState(false);
   const busy = run.status === 'running' || run.status === 'paused';
 
   const limitBytes = settings.maxFileMB * 1048576;
-  const addFiles = (list: FileList | File[]) => {
-    const add = [...list].map((file) => ({ id: crypto.randomUUID(), file, oversize: file.size > limitBytes }));
-    setEntries((e) => [...e, ...add]);
+  const addScanned = (list: ScannedFile[]) => {
+    setEntries((prev) => {
+      const key = (path: string, f: File) => `${path}|${f.size}|${f.lastModified}`;
+      const seen = new Set(prev.map((e) => key(e.path, e.file)));
+      const add: Entry[] = [];
+      for (const { file, path } of list) {
+        const k = key(path, file);
+        if (seen.has(k)) continue;
+        seen.add(k);
+        add.push({ id: crypto.randomUUID(), file, path, oversize: file.size > limitBytes });
+      }
+      return [...prev, ...add];
+    });
   };
+  const addFiles = (list: FileList | File[]) => addScanned([...list].map((file) => ({ file, path: file.name })));
   const effective = useMemo(
     () => entries.map((e) => ({ ...e, oversize: e.file.size > limitBytes })),
     [entries, limitBytes],
@@ -42,7 +56,11 @@ export function UploadPanel({ settings }: { settings: Settings }) {
 
   const log = (text: string, level: LogLine['level'] = 'info') => setLogs((l) => [...l, { t: Date.now(), text, level }]);
 
-  const onDrop = (e: DragEvent) => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files); };
+  const onDrop = async (e: DragEvent) => {
+    e.preventDefault(); setDrag(false);
+    setScanning(true);
+    try { addScanned(await scanDataTransfer(e.dataTransfer)); } finally { setScanning(false); }
+  };
 
   const start = async () => {
     if (!info.tabId || !info.ctx) return;
@@ -71,10 +89,14 @@ export function UploadPanel({ settings }: { settings: Settings }) {
         className={clsx('flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed px-3 py-6 text-center transition',
           drag ? 'border-acc bg-acc/10' : 'border-ink-600 bg-ink-800 hover:border-acc/60', busy && 'pointer-events-none opacity-50')}>
         <FileUp className="h-6 w-6 text-acc" />
-        <div className="font-semibold text-white">Drop files here or click to choose</div>
-        <div className="text-[11px] text-zinc-400">Any number of files — sent {settings.perMessage} per message</div>
+        <div className="font-semibold text-white">{scanning ? 'Scanning folders…' : 'Drop files or folders here, or click to choose'}</div>
+        <div className="text-[11px] text-zinc-400">Any number of files and folders — sent {settings.perMessage} per message</div>
         <input ref={inputRef} type="file" multiple hidden onChange={(e) => { if (e.target.files) addFiles(e.target.files); e.target.value = ''; }} />
+        <input ref={dirRef} type="file" hidden {...{ webkitdirectory: '' }} onChange={(e) => { if (e.target.files) addScanned(scanDirectoryInput(e.target.files)); e.target.value = ''; }} />
       </div>
+      <Button className="w-full" variant="ghost" disabled={busy || scanning} onClick={() => dirRef.current?.click()}>
+        <FolderPlus className="h-4 w-4" />Add folder (scans subfolders; repeat to add more)
+      </Button>
 
       {entries.length > 0 && (
         <Card className="space-y-2">
@@ -95,7 +117,7 @@ export function UploadPanel({ settings }: { settings: Settings }) {
                 {b.map((e) => (
                   <div key={e.id} className="flex items-center gap-2 py-0.5">
                     <FileIcon className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
-                    <span className="truncate text-white" title={e.file.name}>{e.file.name}</span>
+                    <span className="truncate text-white" title={e.path}>{e.path.includes('/') && <span className="text-zinc-500">{e.path.slice(0, e.path.lastIndexOf('/') + 1)}</span>}{e.file.name}</span>
                     <span className="ml-auto shrink-0 text-[11px] text-zinc-400">{formatBytes(e.file.size)}</span>
                     {!busy && <button onClick={() => setEntries((x) => x.filter((y) => y.id !== e.id))} className="text-zinc-500 hover:text-bad"><X className="h-3.5 w-3.5" /></button>}
                   </div>
@@ -104,7 +126,7 @@ export function UploadPanel({ settings }: { settings: Settings }) {
             ))}
             {settings.skipOversize && effective.filter((e) => e.oversize).map((e) => (
               <div key={e.id} className="flex items-center gap-2 px-1.5 py-0.5 text-warn/80">
-                <FileIcon className="h-3.5 w-3.5" /><span className="truncate line-through">{e.file.name}</span>
+                <FileIcon className="h-3.5 w-3.5" /><span className="truncate line-through" title={e.path}>{e.path}</span>
                 <span className="ml-auto text-[11px]">{formatBytes(e.file.size)} &gt; {settings.maxFileMB}MB</span>
               </div>
             ))}
