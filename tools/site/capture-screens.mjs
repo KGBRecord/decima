@@ -98,7 +98,16 @@ async function json(p, init) { return (await fetch(`http://127.0.0.1:${PORT}${p}
 let extId = '';
 for (let i = 0; i < 60 && !extId; i++) {
   await sleep(300);
-  try { const l = await json('/json'); const sw = l.find((t) => t.type === 'service_worker' && t.url.startsWith('chrome-extension://')); if (sw) extId = new URL(sw.url).host; } catch {}
+  try {
+    // newer Chromium builds also load built-in extensions, so pick the worker whose manifest is Decima
+    const l = await json('/json');
+    for (const sw of l.filter((t) => t.type === 'service_worker' && t.url.startsWith('chrome-extension://'))) {
+      const w = await cdp(sw.webSocketDebuggerUrl);
+      const name = await w.ev('chrome.runtime.getManifest().name').catch(() => '');
+      w.close();
+      if (name === 'Decima') { extId = new URL(sw.url).host; break; }
+    }
+  } catch {}
 }
 if (!extId) throw new Error('Extension did not start');
 console.log('extension id', extId);

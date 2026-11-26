@@ -10,11 +10,12 @@ Pick 200 files once; the extension posts them as 20 consecutive messages while y
 
 - **Active context detection** — reads the current server and channel (or DM) from the Discord web app and shows it before anything is sent.
 - **Automatic batching** — splits files into groups of 1–10 and posts each group as one message.
-- **Side panel UI** — drag & drop, per-message grouping preview, progress bar, live log, Pause / Resume / Stop.
+- **Side panel UI** — drag & drop files or whole folders (subfolders are scanned; the **Add folder** button adds one folder per click), per-message grouping preview, progress bar, live log, Pause / Resume / Stop.
 - **Toolbar popup** — quick status, run progress and the most common settings.
 - **Options page** — files per message, delay between messages, size limit profile, caption.
 - **Size-limit profiles** — Free (10 MB), Nitro Basic (50 MB), Nitro (500 MB); oversize files can be skipped automatically.
 - **Optional caption** — attach text to the first or every message.
+- **One message at a time** — the next message starts only after Discord has accepted the previous one (Decima watches the send request; reload the Discord tab after updating the extension).
 - **Safety checks** — aborts if you switch channels mid-run, if the message box is missing, or if an upload times out.
 - **Large-file safe** — files are streamed to the page in 3 MB chunks to stay under Chrome's messaging limits.
 
@@ -142,7 +143,7 @@ To pin the browser and keep logins between runs, create a local `web-ext.config.
 
 1. Open the target server channel or DM in Discord.
 2. Open the side panel and confirm the **Active target** card shows the right server and channel.
-3. Drop or choose your files. They are previewed grouped by message.
+3. Drop or choose your files, or drop / add whole folders. They are previewed grouped by message.
 4. Adjust settings if needed, then click **Send**.
 5. Keep the side panel open until the run finishes. Use **Pause** or **Stop** at any time.
 
