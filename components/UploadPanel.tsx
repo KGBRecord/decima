@@ -91,9 +91,10 @@ export function UploadPanel({ settings }: { settings: Settings }) {
         <FileUp className="h-6 w-6 text-acc" />
         <div className="font-semibold text-white">{scanning ? 'Scanning folders…' : 'Drop files or folders here, or click to choose'}</div>
         <div className="text-[11px] text-zinc-400">Any number of files and folders — sent {settings.perMessage} per message</div>
-        <input ref={inputRef} type="file" multiple hidden onChange={(e) => { if (e.target.files) addFiles(e.target.files); e.target.value = ''; }} />
-        <input ref={dirRef} type="file" hidden {...{ webkitdirectory: '' }} onChange={(e) => { if (e.target.files) addScanned(scanDirectoryInput(e.target.files)); e.target.value = ''; }} />
       </div>
+      {/* Hidden inputs live OUTSIDE the drop zone: a click on them bubbles, and the drop zone's onClick would open the file picker instead of the folder picker. */}
+      <input ref={inputRef} type="file" multiple hidden onChange={(e) => { if (e.target.files) addFiles(e.target.files); e.target.value = ''; }} />
+      <input ref={dirRef} type="file" hidden {...{ webkitdirectory: '' }} onChange={(e) => { if (e.target.files) addScanned(scanDirectoryInput(e.target.files)); e.target.value = ''; }} />
       <Button className="w-full" variant="ghost" disabled={busy || scanning} onClick={() => dirRef.current?.click()}>
         <FolderPlus className="h-4 w-4" />Add folder (scans subfolders; repeat to add more)
       </Button>
