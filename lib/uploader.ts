@@ -87,7 +87,9 @@ export async function runUpload(opts: {
     opts.onBatch(i, 'sending');
     log(`Message ${i + 1}/${batches.length}: ${batches[i].length} file(s)…`);
     try {
-      await sendBatch(tabId, ctx, batches[i], caption, () => { /* stages available for future UI */ });
+      await sendBatch(tabId, ctx, batches[i], caption, (stage) => {
+        if (stage === 'unconfirmed') log('Reload the Discord tab so Decima can confirm each message is sent; continuing without confirmation.', 'err');
+      });
     } catch (e: any) {
       opts.onBatch(i, 'failed');
       await push({ status: 'error', message: e.message });

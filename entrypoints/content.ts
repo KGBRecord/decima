@@ -90,6 +90,27 @@ async function waitSubmitted(): Promise<boolean> {
   return false;
 }
 
+const hookReady = () => document.documentElement.getAttribute('data-dbu-hook') === '1';
+
+/**
+ * Resolves when Discord's create-message request for this channel succeeds (i.e. the message is really sent).
+ * Start it BEFORE pressing Enter so the event cannot be missed. Rejects on HTTP error or timeout.
+ */
+function watchSent(channelId: string, timeoutMs = 10 * 60_000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const stop = () => { clearTimeout(timer); window.removeEventListener('dbu:msg', onMsg); };
+    const timer = setTimeout(() => { stop(); reject(new Error('Timed out waiting for Discord to finish sending')); }, timeoutMs);
+    const onMsg = (ev: Event) => {
+      const d = JSON.parse((ev as CustomEvent<string>).detail) as { phase: 'start' | 'end'; channelId: string; status: number };
+      if (d.phase !== 'end' || d.channelId !== channelId) return;
+      if (d.status >= 200 && d.status < 300) { stop(); resolve(); }
+      else if (d.status === 429) { /* rate limited: Discord retries the same message, keep waiting */ }
+      else { stop(); reject(new Error(`Discord did not accept the message (${d.status ? `HTTP ${d.status}` : 'network error'})`)); }
+    };
+    window.addEventListener('dbu:msg', onMsg);
+  });
+}
+
 export default defineContentScript({
   matches: ['https://discord.com/*', 'https://*.discord.com/*'],
   runAt: 'document_idle',
@@ -129,8 +150,14 @@ export default defineContentScript({
             reply({ t: 'stage', batchId: meta.batchId, stage: 'pasted' });
             if (meta.caption) await typeCaption(editor, meta.caption);
             await sleep(400);
+            // Wait for the message to be truly sent, not just for the composer to clear (Discord clears it
+            // as soon as the upload STARTS). Fall back to the composer check if the page hook is missing
+            // (Discord tab opened before the extension was updated).
+            const confirm = hookReady() ? watchSent(meta.channelId) : null;
+            if (!confirm) reply({ t: 'stage', batchId: meta.batchId, stage: 'unconfirmed' });
             pressEnter(editor);
-            if (!(await waitSubmitted())) throw new Error('Timed out waiting for upload to submit');
+            if (confirm) await confirm;
+            else if (!(await waitSubmitted())) throw new Error('Timed out waiting for upload to submit');
             reply({ t: 'stage', batchId: meta.batchId, stage: 'submitted' });
             reply({ t: 'done', batchId: meta.batchId });
             meta = null; parts = [];

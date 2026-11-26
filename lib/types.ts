@@ -49,7 +49,7 @@ export type UiToContent =
   | { t: 'commit'; batchId: string };
 
 export type ContentToUi =
-  | { t: 'stage'; batchId: string; stage: 'received' | 'pasted' | 'submitted' }
+  | { t: 'stage'; batchId: string; stage: 'received' | 'pasted' | 'submitted' | 'unconfirmed' }
   | { t: 'done'; batchId: string }
   | { t: 'error'; batchId: string; error: string };
 
