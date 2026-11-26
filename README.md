@@ -82,7 +82,7 @@ The extension drives Discord's own composer (paste + Enter). It does **not** cal
 
 ## Landing page
 
-The project site lives in `site/` (plain HTML, CSS and a little JS, no build step). Open `site/index.html` in a browser, or serve the folder with any static server.
+The project site lives in `site/` (plain HTML, CSS and a little JS, no build step). It has a dark and a light theme with a system / light / dark switch (the choice is saved in `localStorage` as `decima-theme`; no saved choice means follow the OS). Open `site/index.html` in a browser, or serve the folder with any static server.
 
 ```bash
 pnpm build                                               # the screenshots are captured from the built extension

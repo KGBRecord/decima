@@ -2,6 +2,27 @@
    Every animation here has a job: hierarchy (word reveals, hero entry), storytelling (the upload
    rail and staggered card entry) or feedback (buttons, the playground).
    Nothing runs when the visitor prefers reduced motion; the page is complete without it. */
+/* Theme switch: system / light / dark. <head> applies the saved choice before paint; this wires the buttons,
+   follows the OS while "system" is chosen, and tells the canvas to repaint (event "themechange"). */
+(() => {
+  const root = document.documentElement, mq = matchMedia('(prefers-color-scheme: light)');
+  const btns = [...document.querySelectorAll('[data-theme-set]')];
+  const apply = (pref) => {
+    const light = pref === 'light' || (pref !== 'dark' && mq.matches);
+    root.setAttribute('data-theme', light ? 'light' : 'dark'); root.setAttribute('data-theme-pref', pref);
+    const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = light ? '#faf9f5' : '#09090a';
+    btns.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.themeSet === pref)));
+    dispatchEvent(new Event('themechange'));
+  };
+  const saved = () => { try { return localStorage.getItem('decima-theme') || 'system'; } catch { return 'system'; } };
+  btns.forEach((b) => b.addEventListener('click', () => {
+    try { b.dataset.themeSet === 'system' ? localStorage.removeItem('decima-theme') : localStorage.setItem('decima-theme', b.dataset.themeSet); } catch {}
+    apply(b.dataset.themeSet);
+  }));
+  mq.addEventListener('change', () => { if (saved() === 'system') apply('system'); });
+  apply(saved());
+})();
+
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -153,7 +174,9 @@
   function fieldCtx() {
     const c = $('#field'); if (!c) return null;
     const ctx = c.getContext('2d');
-    const st = { c, ctx, w: 0, h: 0, pts: [], mx: -999, my: -999 };
+    const st = { c, ctx, w: 0, h: 0, pts: [], mx: -999, my: -999, col: {} };
+    const readCols = () => { const cs = getComputedStyle(root); st.col = { dot: cs.getPropertyValue('--field-dot').trim(), lit: cs.getPropertyValue('--field-lit').trim() }; };
+    readCols(); addEventListener('themechange', () => { readCols(); st.draw(); });
     st.resize = () => {
       const dpr = Math.min(devicePixelRatio || 1, 2), r = c.getBoundingClientRect();
       st.w = r.width; st.h = r.height; c.width = r.width * dpr; c.height = r.height * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -163,7 +186,7 @@
     st.draw = () => {
       ctx.clearRect(0, 0, st.w, st.h);
       for (const p of st.pts) {
-        ctx.fillStyle = p.lit ? 'rgba(200,255,61,.85)' : 'rgba(239,237,230,.16)';
+        ctx.fillStyle = p.lit ? st.col.lit : st.col.dot;
         ctx.beginPath(); ctx.roundRect(p.x, p.y, p.s, p.s * 1.25, 2); ctx.fill();
       }
     };
