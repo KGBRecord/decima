@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import type { ReactNode, ButtonHTMLAttributes } from 'react';
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={clsx('rounded-lg bg-ink-800 border border-ink-900/60 p-3', className)}>{children}</div>;
+  return <div className={clsx('rounded-lg bg-ink-800 border border-edge p-3', className)}>{children}</div>;
 }
 
 export function Button({ variant = 'primary', className, ...p }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'ghost' | 'danger' | 'success' }) {
@@ -10,11 +10,11 @@ export function Button({ variant = 'primary', className, ...p }: ButtonHTMLAttri
     <button
       {...p}
       className={clsx(
-        'inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer',
+        'inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer',
         variant === 'primary' && 'bg-acc hover:bg-acc-dark text-on-acc',
         variant === 'success' && 'bg-acc hover:bg-acc-dark text-on-acc',
         variant === 'danger' && 'bg-bad hover:brightness-110 text-white',
-        variant === 'ghost' && 'bg-ink-600 hover:bg-ink-600/70 text-white',
+        variant === 'ghost' && 'bg-ink-600 hover:bg-ink-600/70 text-fg',
         className,
       )}
     />
@@ -31,7 +31,7 @@ export function Field({ label, hint, children }: { label: string; hint?: string;
   );
 }
 
-export const inputCls = 'w-full rounded-md bg-ink-900 border border-ink-600 px-2 py-1.5 text-white outline-none focus:border-acc';
+export const inputCls = 'w-full rounded-md bg-ink-900 border border-edge-in px-2 py-1.5 text-fg outline-none focus:border-acc-t';
 
 export function Badge({ tone, children }: { tone: 'ok' | 'warn' | 'bad' | 'muted'; children: ReactNode }) {
   return (
@@ -45,7 +45,7 @@ export function Badge({ tone, children }: { tone: 'ok' | 'warn' | 'bad' | 'muted
 
 export function Progress({ value }: { value: number }) {
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-ink-900">
+    <div className="h-2 w-full overflow-hidden rounded-full bg-track">
       <div className="h-full bg-acc transition-all duration-300" style={{ width: `${Math.round(value * 100)}%` }} />
     </div>
   );

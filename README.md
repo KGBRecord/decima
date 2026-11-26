@@ -11,6 +11,7 @@ Pick 200 files once; the extension posts them as 20 consecutive messages while y
 - **Active context detection** — reads the current server and channel (or DM) from the Discord web app and shows it before anything is sent.
 - **Automatic batching** — splits files into groups of 1–10 and posts each group as one message.
 - **Side panel UI** — drag & drop files or whole folders (subfolders are scanned; the **Add folder** button adds one folder per click), per-message grouping preview, progress bar, live log, Pause / Resume / Stop.
+- **Dark, light or system theme** — pick it in Settings (or Options). *System* follows your browser or OS; the choice is shared by the popup, side panel and options page.
 - **Toolbar popup** — quick status, run progress and the most common settings.
 - **Options page** — files per message, delay between messages, size limit profile, caption.
 - **Size-limit profiles** — Free (10 MB), Nitro Basic (50 MB), Nitro (500 MB); oversize files can be skipped automatically.

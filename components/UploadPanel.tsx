@@ -87,9 +87,9 @@ export function UploadPanel({ settings }: { settings: Settings }) {
         onDragOver={(e) => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)} onDrop={onDrop}
         onClick={() => !busy && inputRef.current?.click()}
         className={clsx('flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed px-3 py-6 text-center transition',
-          drag ? 'border-acc bg-acc/10' : 'border-ink-600 bg-ink-800 hover:border-acc/60', busy && 'pointer-events-none opacity-50')}>
-        <FileUp className="h-6 w-6 text-acc" />
-        <div className="font-semibold text-white">{scanning ? 'Scanning folders…' : 'Drop files or folders here, or click to choose'}</div>
+          drag ? 'border-acc-t bg-acc/10' : 'border-edge-in bg-ink-800 hover:border-acc-t/60', busy && 'pointer-events-none opacity-50')}>
+        <FileUp className="h-6 w-6 text-acc-t" />
+        <div className="font-semibold text-fg">{scanning ? 'Scanning folders…' : 'Drop files or folders here, or click to choose'}</div>
         <div className="text-[11px] text-zinc-400">Any number of files and folders — sent {settings.perMessage} per message</div>
       </div>
       {/* Hidden inputs live OUTSIDE the drop zone: a click on them bubbles, and the drop zone's onClick would open the file picker instead of the folder picker. */}
@@ -106,7 +106,7 @@ export function UploadPanel({ settings }: { settings: Settings }) {
             <Badge tone="muted">{formatBytes(totalBytes)}</Badge>
             <Badge tone="muted">{batchCount} message{batchCount === 1 ? '' : 's'}</Badge>
             {skipped > 0 && <Badge tone="warn">{skipped} oversize {settings.skipOversize ? 'skipped' : 'will fail'}</Badge>}
-            <button disabled={busy} onClick={reset} className="ml-auto flex items-center gap-1 text-[11px] text-zinc-400 hover:text-white disabled:opacity-40"><Trash2 className="h-3 w-3" />Clear</button>
+            <button disabled={busy} onClick={reset} className="ml-auto flex items-center gap-1 text-[11px] text-zinc-400 hover:text-fg disabled:opacity-40"><Trash2 className="h-3 w-3" />Clear</button>
           </div>
           <div className="max-h-56 space-y-2 overflow-auto pr-1">
             {batches.map((b, bi) => (
@@ -118,7 +118,7 @@ export function UploadPanel({ settings }: { settings: Settings }) {
                 {b.map((e) => (
                   <div key={e.id} className="flex items-center gap-2 py-0.5">
                     <FileIcon className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
-                    <span className="truncate text-white" title={e.path}>{e.path.includes('/') && <span className="text-zinc-500">{e.path.slice(0, e.path.lastIndexOf('/') + 1)}</span>}{e.file.name}</span>
+                    <span className="truncate text-fg" title={e.path}>{e.path.includes('/') && <span className="text-zinc-500">{e.path.slice(0, e.path.lastIndexOf('/') + 1)}</span>}{e.file.name}</span>
                     <span className="ml-auto shrink-0 text-[11px] text-zinc-400">{formatBytes(e.file.size)}</span>
                     {!busy && <button onClick={() => setEntries((x) => x.filter((y) => y.id !== e.id))} className="text-zinc-500 hover:text-bad"><X className="h-3.5 w-3.5" /></button>}
                   </div>

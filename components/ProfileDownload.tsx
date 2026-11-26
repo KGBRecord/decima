@@ -136,10 +136,10 @@ export function ProfileDownload({ tabId, username }: { tabId: number; username: 
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Download from profile</div>
-          <div className="mt-1 truncate font-semibold text-white">@{username}</div>
+          <div className="mt-1 truncate font-semibold text-fg">@{username}</div>
         </div>
         <div className="shrink-0 text-right">
-          <div className="text-xl font-bold leading-none text-white tabular-nums">{phase === 'loading' ? '…' : total ?? '?'}</div>
+          <div className="text-xl font-bold leading-none text-fg tabular-nums">{phase === 'loading' ? '…' : total ?? '?'}</div>
           <div className="mt-1 text-[11px] text-zinc-500">posts</div>
         </div>
       </div>
@@ -155,18 +155,18 @@ export function ProfileDownload({ tabId, username }: { tabId: number; username: 
               <label className="flex items-center gap-2 text-zinc-300"><input type="checkbox" className="eph-chk" checked={wantPosts} onChange={(e) => setWantPosts(e.target.checked)} /><GalleryHorizontalEnd className="h-3.5 w-3.5 shrink-0 text-zinc-400" /><span className="flex-1">Posts</span><span className="text-[11px] text-zinc-500">{total ?? '?'}</span></label>
               <label className="flex items-center gap-2 text-zinc-300"><input type="checkbox" className="eph-chk" checked={wantHighlights} onChange={(e) => setWantHighlights(e.target.checked)} /><Layers className="h-3.5 w-3.5 shrink-0 text-zinc-400" /><span className="flex-1">Highlights</span><span className="text-[11px] text-zinc-500">{highlightList === null ? '?' : total_hl === 0 ? 'none' : wantHighlights ? `${pickedCount} of ${total_hl}` : `${total_hl} ${total_hl === 1 ? 'reel' : 'reels'}`}</span></label>
               {wantHighlights && highlightList && total_hl > 0 && (
-                <div className="ml-6 space-y-1.5 rounded-md border border-ink-600 bg-ink-900/60 p-2">
+                <div className="ml-6 space-y-1.5 rounded-md border border-edge-in bg-ink-900/60 p-2">
                   <div className="flex items-center justify-between text-[11px] text-zinc-500">
                     <span>Pick the ones to download</span>
                     <span className="flex gap-2">
-                      <button type="button" className="cursor-pointer text-acc hover:underline disabled:cursor-default disabled:text-zinc-600 disabled:no-underline" disabled={allPicked} onClick={() => setPicked(new Set(highlightList.map((h) => h.id)))}>All</button>
-                      <span aria-hidden className="text-zinc-700">|</span><button type="button" className="cursor-pointer text-acc hover:underline disabled:cursor-default disabled:text-zinc-600 disabled:no-underline" disabled={pickedCount === 0} onClick={() => setPicked(new Set())}>None</button>
+                      <button type="button" className="cursor-pointer text-acc-t hover:underline disabled:cursor-default disabled:text-zinc-600 disabled:no-underline" disabled={allPicked} onClick={() => setPicked(new Set(highlightList.map((h) => h.id)))}>All</button>
+                      <span aria-hidden className="text-zinc-700">|</span><button type="button" className="cursor-pointer text-acc-t hover:underline disabled:cursor-default disabled:text-zinc-600 disabled:no-underline" disabled={pickedCount === 0} onClick={() => setPicked(new Set())}>None</button>
                     </span>
                   </div>
                   <ul className="max-h-56 space-y-1 overflow-y-auto pr-1">
                     {highlightList.map((h) => (
                       <li key={h.id}>
-                        <label className={clsx('flex cursor-pointer items-center gap-2 rounded-md px-1 py-1 hover:bg-ink-800', picked.has(h.id) ? 'text-white' : 'text-zinc-400 hover:text-white [&_img]:opacity-65 hover:[&_img]:opacity-100')}>
+                        <label className={clsx('flex cursor-pointer items-center gap-2 rounded-md px-1 py-1 hover:bg-ink-800', picked.has(h.id) ? 'text-fg' : 'text-zinc-400 hover:text-fg [&_img]:opacity-65 hover:[&_img]:opacity-100')}>
                           <input type="checkbox" className="eph-chk" checked={picked.has(h.id)} onChange={(e) => setPicked((prev) => { const n = new Set(prev); if (e.target.checked) n.add(h.id); else n.delete(h.id); return n; })} />
                           {h.cover ? <img src={h.cover} alt="" width={28} height={28} loading="lazy" className="h-7 w-7 shrink-0 rounded-full border border-ink-600 object-cover" /> : <span className="h-7 w-7 shrink-0 rounded-full border border-ink-600 bg-ink-800" />}
                           <span className="min-w-0 flex-1 truncate" title={h.title || 'Untitled'}>{h.title || 'Untitled'}</span>

@@ -20,8 +20,8 @@ export function PopupApp() {
     <div className="w-[340px] space-y-3 p-3">
       <header className="flex items-center gap-2">
         <Logo size={32} />
-        <div className="flex-1"><div className="font-bold text-white">Decima</div><div className="text-[11px] text-zinc-400">Many files → Discord, 10 per message</div></div>
-        <button title="Options" onClick={() => chrome.runtime.openOptionsPage()} className="text-zinc-400 hover:text-white"><Cog className="h-4 w-4" /></button>
+        <div className="flex-1"><div className="font-bold text-fg">Decima</div><div className="text-[11px] text-zinc-400">Many files → Discord, 10 per message</div></div>
+        <button title="Options" onClick={() => chrome.runtime.openOptionsPage()} className="text-zinc-400 hover:text-fg"><Cog className="h-4 w-4" /></button>
       </header>
       <ContextCard info={info} />
       {(active || run.status === 'done') && (

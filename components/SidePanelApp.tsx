@@ -19,14 +19,14 @@ export function SidePanelApp() {
   ];
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center gap-2 border-b border-ink-900 bg-ink-800 px-3 py-2.5">
+      <header className="flex items-center gap-2 border-b border-edge bg-ink-800 px-3 py-2.5">
         <Logo size={28} />
-        <div><div className="font-bold leading-tight text-white">Decima</div><div className="text-[11px] leading-tight text-zinc-400">Discord uploads · Ephemera</div></div>
+        <div><div className="font-bold leading-tight text-fg">Decima</div><div className="text-[11px] leading-tight text-zinc-400">Discord uploads · Ephemera</div></div>
       </header>
-      <nav className="flex border-b border-ink-900 bg-ink-800">
+      <nav className="flex border-b border-edge bg-ink-800">
         {tabs.map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={clsx('flex flex-1 items-center justify-center gap-1.5 border-b-2 py-2 text-[12px] font-medium', tab === t.id ? 'border-acc text-white' : 'border-transparent text-zinc-400 hover:text-white')}>
+            className={clsx('flex flex-1 items-center justify-center gap-1.5 border-b-2 py-2 text-[12px] font-medium', tab === t.id ? 'border-acc-t text-fg' : 'border-transparent text-zinc-400 hover:text-fg')}>
             <t.icon className="h-3.5 w-3.5" />{t.label}
           </button>
         ))}
@@ -41,7 +41,7 @@ export function SidePanelApp() {
               <div className="flex items-center gap-3">
                 <Logo size={40} />
                 <div>
-                  <div className="text-base font-bold text-white">Decima</div>
+                  <div className="text-base font-bold text-fg">Decima</div>
                   <div className="text-[11px] text-zinc-400">Version {chrome.runtime.getManifest().version}</div>
                 </div>
               </div>
@@ -49,25 +49,25 @@ export function SidePanelApp() {
             </Card>
             <Card className="space-y-1.5 text-zinc-300">
               <div className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Author</div>
-              <div className="font-semibold text-white">KGB Record</div>
+              <div className="font-semibold text-fg">KGB Record</div>
               <div className="text-[11px] italic text-zinc-500">code is our music</div>
               <div className="flex flex-col gap-1 pt-1 text-[12px]">
-                <a className="text-acc hover:underline" href="https://github.com/KGBRecord" target="_blank" rel="noreferrer">github.com/KGBRecord</a>
-                <a className="text-acc hover:underline" href="https://github.com/KGBRecord/decima" target="_blank" rel="noreferrer">Source code &amp; issues</a>
+                <a className="text-acc-t hover:underline" href="https://github.com/KGBRecord" target="_blank" rel="noreferrer">github.com/KGBRecord</a>
+                <a className="text-acc-t hover:underline" href="https://github.com/KGBRecord/decima" target="_blank" rel="noreferrer">Source code &amp; issues</a>
               </div>
             </Card>
             <Card className="space-y-2 text-zinc-300">
-              <div className="font-semibold text-white">How Decima uploads</div>
+              <div className="font-semibold text-fg">How Decima uploads</div>
               <p>The extension detects the active Discord server and channel, splits your files into groups of up to 10, and posts each group as one message using Discord's own composer (paste, then Enter).</p>
               <p>Files travel from the side panel to the Discord tab in 3 MB chunks. Keep the panel open until the run finishes; switching channels mid-run aborts for safety.</p>
             </Card>
             <Card className="space-y-2 text-zinc-300">
-              <div className="flex items-center gap-2 font-semibold text-white"><EphemeraLogo size={22} />How Ephemera saves stories</div>
+              <div className="flex items-center gap-2 font-semibold text-fg"><EphemeraLogo size={22} />How Ephemera saves stories</div>
               <ol className="list-decimal space-y-1.5 pl-4">
-                <li><b className="text-white">Detect:</b> content scripts on Instagram and Facebook watch the page and add download buttons to stories, posts, reels, videos and albums. WhatsApp Web statuses are handled on demand.</li>
-                <li><b className="text-white">Find the media:</b> on Instagram it calls the web API with your own logged-in session to get the original story and post files; for story videos it reads the player's React state. On Facebook it collects video URLs from the page, network performance entries and GraphQL responses.</li>
-                <li><b className="text-white">Trigger:</b> use the page buttons, the popup, or the Stories tab. The extension then injects the matching script into the current tab only when you ask.</li>
-                <li><b className="text-white">Download:</b> the background worker saves files with Chrome's downloads API, named by username and post, falling back to fetch, blob and data URL when a direct link is refused. Profile bulk downloads are packed into a ZIP.</li>
+                <li><b className="text-fg">Detect:</b> content scripts on Instagram and Facebook watch the page and add download buttons to stories, posts, reels, videos and albums. WhatsApp Web statuses are handled on demand.</li>
+                <li><b className="text-fg">Find the media:</b> on Instagram it calls the web API with your own logged-in session to get the original story and post files; for story videos it reads the player's React state. On Facebook it collects video URLs from the page, network performance entries and GraphQL responses.</li>
+                <li><b className="text-fg">Trigger:</b> use the page buttons, the popup, or the Stories tab. The extension then injects the matching script into the current tab only when you ask.</li>
+                <li><b className="text-fg">Download:</b> the background worker saves files with Chrome's downloads API, named by username and post, falling back to fetch, blob and data URL when a direct link is refused. Profile bulk downloads are packed into a ZIP.</li>
               </ol>
               <p className="text-[11px] text-zinc-500">Everything runs locally in your browser. Nothing is sent to any server other than Instagram or Facebook themselves.</p>
             </Card>

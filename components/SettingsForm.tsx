@@ -1,10 +1,41 @@
 import type { Settings } from '@/lib/types';
+import { useEffect, useState } from 'react';
+import { Monitor, Moon, Sun } from 'lucide-react';
+import clsx from 'clsx';
+import { getThemePref, setThemePref, type ThemePref } from '@/lib/theme';
 import { Field, inputCls } from './ui';
+
+const THEMES: { id: ThemePref; label: string; icon: typeof Sun }[] = [
+  { id: 'system', label: 'System', icon: Monitor }, { id: 'light', label: 'Light', icon: Sun }, { id: 'dark', label: 'Dark', icon: Moon },
+];
+
+function ThemePicker() {
+  const [pref, setPref] = useState<ThemePref>(getThemePref);
+  useEffect(() => {
+    const sync = () => setPref(getThemePref());
+    window.addEventListener('decima-theme', sync);
+    return () => window.removeEventListener('decima-theme', sync);
+  }, []);
+  return (
+    <Field label="Theme" hint="System follows your browser or OS setting">
+      <div role="group" aria-label="Theme" className="grid grid-cols-3 gap-1 rounded-md bg-ink-900 p-1">
+        {THEMES.map(({ id, label, icon: Icon }) => (
+          <button key={id} type="button" aria-pressed={pref === id} onClick={() => { setPref(id); setThemePref(id); }}
+            className={clsx('flex cursor-pointer items-center justify-center gap-1.5 rounded px-2 py-1.5 text-[12px] font-medium transition',
+              pref === id ? 'bg-acc text-on-acc' : 'text-zinc-300 hover:text-fg')}>
+            <Icon className="h-3.5 w-3.5" />{label}
+          </button>
+        ))}
+      </div>
+    </Field>
+  );
+}
 
 export function SettingsForm({ settings, update }: { settings: Settings; update: (p: Partial<Settings>) => void }) {
   const num = (v: string, min: number, max: number, d: number) => Math.min(max, Math.max(min, Number(v) || d));
   return (
     <div className="space-y-3">
+      <ThemePicker />
       <div className="grid grid-cols-2 gap-3">
         <Field label="Files per message" hint="Discord max: 10">
           <input type="number" min={1} max={10} className={inputCls} value={settings.perMessage}

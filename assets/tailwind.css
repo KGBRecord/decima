@@ -1,28 +1,60 @@
 @import "tailwindcss";
 
+/* Colours are CSS variables so the same utility classes serve both themes.
+   Dark is the default; lib/theme.ts sets html[data-theme] to "light" or "dark" (system / light / dark choice). */
+:root {
+  --ink-900: #1e1f22; --ink-800: #2b2d31; --ink-700: #313338; --ink-600: #3f4147;
+  --fg: #ffffff; --fg-body: #dbdee1;
+  --z200: #e4e4e7; --z300: #d4d4d8; --z400: #a1a1aa; --z500: #71717a; --z600: #52525b; --z700: #3f3f46;
+  --acc-t: #c8ff3d; --ok: #23a55a; --warn: #f0b232; --bad: #f23f43;
+  --edge: #1e1f22; --edge-in: #3f4147; --track: #1e1f22;
+  --scroll: #1a1b1e; --chk-border: #5a5c66; --ph: #6b6d76; --sel-fg: #ffffff;
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  --ink-900: #ebe9df; --ink-800: #ffffff; --ink-700: #f4f3ee; --ink-600: #d3d0c4;
+  --fg: #14140f; --fg-body: #2a2a24;
+  --z200: #2a2a24; --z300: #3a3a34; --z400: #55544d; --z500: #5e5d55; --z600: #8c8b80; --z700: #b8b6a8;
+  --acc-t: #3f6b00; --ok: #1a7f43; --warn: #8a5a00; --bad: #c62828;
+  --edge: #cfccbf; --edge-in: #a9a698; --track: #d9d6c9;
+  --scroll: #c9c6b8; --chk-border: #9a988a; --ph: #6f6e65; --sel-fg: #14140f;
+  color-scheme: light;
+}
+
 @theme {
   --color-acc: #c8ff3d;
   --color-acc-dark: #b3e62e;
   --color-on-acc: #09090a;
-  --color-ink-900: #1e1f22;
-  --color-ink-800: #2b2d31;
-  --color-ink-700: #313338;
-  --color-ink-600: #3f4147;
-  --color-ok: #23a55a;
-  --color-warn: #f0b232;
-  --color-bad: #f23f43;
+  --color-acc-t: var(--acc-t);
+  --color-fg: var(--fg);
+  --color-ink-900: var(--ink-900);
+  --color-ink-800: var(--ink-800);
+  --color-ink-700: var(--ink-700);
+  --color-ink-600: var(--ink-600);
+  --color-edge: var(--edge);
+  --color-edge-in: var(--edge-in);
+  --color-track: var(--track);
+  --color-zinc-200: var(--z200);
+  --color-zinc-300: var(--z300);
+  --color-zinc-400: var(--z400);
+  --color-zinc-500: var(--z500);
+  --color-zinc-600: var(--z600);
+  --color-zinc-700: var(--z700);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
 }
 
 html, body, #root { height: 100%; }
-:root { accent-color: var(--color-acc); color-scheme: dark; }
-::selection { background: rgba(200, 255, 61, .35); color: #fff; }
-input:focus-visible, button:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--color-acc); outline-offset: 1px; }
-body { margin: 0; background: var(--color-ink-700); color: #dbdee1; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 13px; }
+:root { accent-color: var(--color-acc); }
+::selection { background: rgba(200, 255, 61, .35); color: var(--sel-fg); }
+input:focus-visible, button:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--acc-t); outline-offset: 1px; }
+body { margin: 0; background: var(--color-ink-700); color: var(--fg-body); font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 13px; }
 ::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-thumb { background: #1a1b1e; border-radius: 8px; }
+::-webkit-scrollbar-thumb { background: var(--scroll); border-radius: 8px; }
 
 /* checkbox used by the Ephemera profile card: dark when off, lime with a dark tick when on */
-.eph-chk { appearance: none; width: 16px; height: 16px; flex: none; cursor: pointer; border-radius: 4px; border: 1px solid #5a5c66; background: var(--color-ink-900) center / 12px no-repeat; }
+.eph-chk { appearance: none; width: 16px; height: 16px; flex: none; cursor: pointer; border-radius: 4px; border: 1px solid var(--chk-border); background: var(--color-ink-900) center / 12px no-repeat; }
 .eph-chk:checked { border-color: #c8ff3d; background-color: #c8ff3d; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-6.5' fill='none' stroke='%2309090a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
-.eph-chk:focus-visible { outline: 2px solid #c8ff3d; outline-offset: 2px; }
-input::placeholder { color: #6b6d76; opacity: 1; }
+.eph-chk:focus-visible { outline: 2px solid var(--acc-t); outline-offset: 2px; }
+input::placeholder { color: var(--ph); opacity: 1; }
