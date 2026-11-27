@@ -112,11 +112,13 @@ for (let i = 0; i < 60 && !extId; i++) {
 if (!extId) throw new Error('Extension did not start');
 console.log('extension id', extId);
 
+let THEME = 'dark'; // extension pages read this from localStorage (key decima-theme) before first paint
 async function page(url, scenario, { width, height }) {
   const t = await json('/json/new?about:blank', { method: 'PUT' });
   const c = await cdp(t.webSocketDebuggerUrl);
   await c.send('Page.enable'); await c.send('Runtime.enable');
   await c.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 2, mobile: false });
+  if (url.startsWith('chrome-extension://')) await c.send('Page.addScriptToEvaluateOnNewDocument', { source: `try{localStorage.setItem('decima-theme',${JSON.stringify(THEME)})}catch(e){}` });
   if (scenario) await c.send('Page.addScriptToEvaluateOnNewDocument', { source: stub(scenario) });
   await c.send('Page.navigate', { url });
   await sleep(1400);
@@ -130,6 +132,7 @@ async function page(url, scenario, { width, height }) {
   return c;
 }
 const shot = async (c, name, clip) => {
+  if (THEME === 'light') name = name.replace('.png', '-light.png');
   const { data } = await c.send('Page.captureScreenshot', { format: 'png', ...(clip ? { clip: { ...clip, scale: 1 } } : {}) });
   fs.writeFileSync(path.join(OUT, name), Buffer.from(data, 'base64')); // PNG; convert with: python3 tools/site/optimize-shots.py
   console.log('wrote', name);
@@ -145,34 +148,47 @@ const addFiles = async (c) => {
 try {
   const panelUrl = `chrome-extension://${extId}/sidepanel.html`;
   const SIZE = { width: 400, height: 780 };
+  let c;
 
-  // 1) target detected, nothing queued
-  let c = await page(panelUrl, 'discord', SIZE);
-  await shot(c, 'panel-target.png');
-  // 2) files queued and grouped into messages
-  await addFiles(c);
-  await shot(c, 'panel-queue.png');
-  // 3) mid-run: first message sent, waiting before the next
-  await clickText(c, 'Send');
-  await sleep(2200);
-  await shot(c, 'panel-run.png');
-  c.close();
+  for (const theme of ['dark', 'light']) {
+    THEME = theme;
+    // 1) target detected, nothing queued
+    c = await page(panelUrl, 'discord', SIZE);
+    // the run state lives in chrome.storage.session and survives between pages: clear it so each theme starts idle
+    await c.ev(`chrome.storage.session.clear()`);
+    await sleep(600);
+    await shot(c, 'panel-target.png');
+    // 2) files queued and grouped into messages
+    await addFiles(c);
+    await shot(c, 'panel-queue.png');
+    // 3) mid-run: first message sent, waiting before the next
+    for (let i = 0; i < 40; i++) { if (await c.ev(`[...document.querySelectorAll('button')].some((b) => b.textContent.trim().startsWith('Send') && !b.disabled)`)) break; await sleep(150); }
+    await clickText(c, 'Send');
+    // wait for the real state (first message done, run still going); a fixed delay drifts between runs
+    let ok = false;
+    for (let i = 0; i < 40 && !ok; i++) { await sleep(150); ok = await c.ev(`/10\\/22 files/.test(document.body.innerText) && /running|paused/.test(document.body.innerText)`); }
+    if (!ok) throw new Error('run state 10/22 never appeared; body: ' + (await c.ev(`document.body.innerText.slice(-260)`)).replace(/\n/g, ' | '));
+    await shot(c, 'panel-run.png');
+    c.close();
 
-  // 4) Ephemera tab on an Instagram page
-  c = await page(panelUrl, 'ig', SIZE);
-  await clickText(c, 'Ephemera');
-  await sleep(500);
-  await shot(c, 'panel-ephemera.png');
-  c.close();
+    // 4) Ephemera tab on an Instagram page
+    c = await page(panelUrl, 'ig', SIZE);
+    await clickText(c, 'Ephemera');
+    await sleep(500);
+    await shot(c, 'panel-ephemera.png');
+    c.close();
 
-  // 5) popup
-  c = await page(`chrome-extension://${extId}/popup.html`, 'discord', { width: 340, height: 420 });
-  await sleep(600);
-  const h = await c.ev('document.documentElement.scrollHeight');
-  await c.send('Emulation.setDeviceMetricsOverride', { width: 340, height: h, deviceScaleFactor: 2, mobile: false });
-  await sleep(300);
-  await shot(c, 'popup.png');
-  c.close();
+    // 5) popup
+    c = await page(`chrome-extension://${extId}/popup.html`, 'discord', { width: 340, height: 420 });
+    await sleep(600);
+    const h = await c.ev('document.documentElement.scrollHeight');
+    await c.send('Emulation.setDeviceMetricsOverride', { width: 340, height: h, deviceScaleFactor: 2, mobile: false });
+    await sleep(300);
+    await shot(c, 'popup.png');
+    c.close();
+
+  }
+  THEME = 'dark';
 
   // 7) where the buttons appear on Instagram and Facebook: mock pages + the real built stylesheet
   const css = fs.readFileSync(path.join(DIST, 'content-scripts', 'instagram.css'), 'utf8');
@@ -205,21 +221,24 @@ try {
   c.close();
   // last on purpose: this one resizes its page twice, and a stale override must not leak into the mock captures
   // 8) "Download all posts" card in the Ephemera tab, on an Instagram profile (real React UI)
-  c = await page(panelUrl, 'igprofile', { width: 400, height: 1010 });
-  await clickText(c, 'Ephemera');
-  for (let i = 0; i < 20; i++) { await sleep(300); if (await c.ev(`/128\\s*posts/.test(document.body.innerText)`)) break; }
-  await c.ev(`(() => { const set = (el, v) => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, String(v)); el.dispatchEvent(new Event('input', { bubbles: true })); };
-    set(document.querySelector('input[aria-label="First post"]'), 1); set(document.querySelector('input[aria-label="Last post"]'), 40);
-    const box = (name) => [...document.querySelectorAll('label')].find((l) => l.textContent.trim().startsWith(name)).querySelector('input[type=checkbox]');
-    box('Highlights').click(); box('Profile picture').click(); box('Most liked').click();
-    document.querySelectorAll('ul li label input')[3].click(); })()`);
-  await sleep(500);
-  // fit the frame to the content: bottom of the last block in <main>, plus the panel's own padding
-  const hgt = await c.ev(`(() => { const m = document.querySelector('main'); const last = [...m.querySelectorAll('.space-y-3 > *')].pop(); return Math.ceil(last.getBoundingClientRect().bottom + 16); })()`);
-  await c.send('Emulation.setDeviceMetricsOverride', { width: 400, height: Math.max(hgt, 600), deviceScaleFactor: 2, mobile: false });
-  await sleep(400);
-  await shot(c, 'panel-profile.png');
-  c.close();
+  for (const theme of ['dark', 'light']) {
+    THEME = theme;
+    c = await page(panelUrl, 'igprofile', { width: 400, height: 1010 });
+    await clickText(c, 'Ephemera');
+    for (let i = 0; i < 20; i++) { await sleep(300); if (await c.ev(`/128\\s*posts/.test(document.body.innerText)`)) break; }
+    await c.ev(`(() => { const set = (el, v) => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, String(v)); el.dispatchEvent(new Event('input', { bubbles: true })); };
+      set(document.querySelector('input[aria-label="First post"]'), 1); set(document.querySelector('input[aria-label="Last post"]'), 40);
+      const box = (name) => [...document.querySelectorAll('label')].find((l) => l.textContent.trim().startsWith(name)).querySelector('input[type=checkbox]');
+      box('Highlights').click(); box('Profile picture').click(); box('Most liked').click();
+      document.querySelectorAll('ul li label input')[3].click(); })()`);
+    await sleep(500);
+    // fit the frame to the content: bottom of the last block in <main>, plus the panel's own padding
+    const hgt = await c.ev(`(() => { const m = document.querySelector('main'); const last = [...m.querySelectorAll('.space-y-3 > *')].pop(); return Math.ceil(last.getBoundingClientRect().bottom + 16); })()`);
+    await c.send('Emulation.setDeviceMetricsOverride', { width: 400, height: Math.max(hgt, 600), deviceScaleFactor: 2, mobile: false });
+    await sleep(400);
+    await shot(c, 'panel-profile.png');
+    c.close();
+  }
 
 } finally {
   cleanup();

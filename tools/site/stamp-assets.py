@@ -39,6 +39,11 @@ def stamp_html() -> int:
         html,
     )
     html = re.sub(
+        r'\b(data-light)="(assets/[^"?]+)(?:\?v=[0-9a-f]+)?"',
+        lambda m: f'{m.group(1)}="{m.group(2)}?v={digest(m.group(2))}"',
+        html,
+    )
+    html = re.sub(
         r'content="' + re.escape(ORIGIN) + r'(assets/[^"?]+)(?:\?v=[0-9a-f]+)?"',
         lambda m: f'content="{ORIGIN}{m.group(1)}?v={digest(m.group(1))}"',
         html,

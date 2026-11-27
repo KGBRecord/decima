@@ -12,8 +12,18 @@
     root.setAttribute('data-theme', light ? 'light' : 'dark'); root.setAttribute('data-theme-pref', pref);
     const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = light ? '#faf9f5' : '#09090a';
     btns.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.themeSet === pref)));
+    swapShots(light);
     dispatchEvent(new Event('themechange'));
   };
+  /* Extension screenshots follow the page theme: <name>.webp (dark) or <name>-light.webp. Dark stays in the HTML,
+     so there is no flash and no broken image if JS is off. Light files are looked up through a map built at load. */
+  const shots = [...document.querySelectorAll('img[data-shot]')];
+  const darkSrc = new Map(shots.map((i) => [i, i.getAttribute('src')]));
+  const lightSrc = new Map(shots.map((i) => [i, i.dataset.light || '']));
+  const swapShots = (light) => shots.forEach((i) => {
+    const want = light ? lightSrc.get(i) : darkSrc.get(i);
+    if (want && i.getAttribute('src') !== want) i.setAttribute('src', want);
+  });
   const saved = () => { try { return localStorage.getItem('decima-theme') || 'system'; } catch { return 'system'; } };
   btns.forEach((b) => b.addEventListener('click', () => {
     try { b.dataset.themeSet === 'system' ? localStorage.removeItem('decima-theme') : localStorage.setItem('decima-theme', b.dataset.themeSet); } catch {}
